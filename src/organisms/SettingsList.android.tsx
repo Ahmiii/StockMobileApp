@@ -15,9 +15,6 @@ import { Text as RNText } from "react-native";
 import { Uniwind, useCSSVariable, useUniwind } from "uniwind";
 import { THEMES, type SettingsListProps } from "./SettingsList";
 
-// Android: native Jetpack Compose rows inside the app's Card. The theme switch
-// is a Material 3 segmented button. Compose takes colors, not classes, so the
-// tokens are read and passed in.
 const SettingsList = ({ currency }: SettingsListProps) => {
   const { theme } = useUniwind();
   const [foreground, muted, primary, primaryForeground, secondary, border] =
@@ -40,7 +37,9 @@ const SettingsList = ({ currency }: SettingsListProps) => {
   const soon = (
     <RNHostView matchContents>
       <Pill tone="primary">
-        <RNText className="text-xs font-bold uppercase text-primary">Soon</RNText>
+        <RNText className="text-xs font-bold uppercase text-primary">
+          Soon
+        </RNText>
       </Pill>
     </RNHostView>
   );
@@ -54,7 +53,10 @@ const SettingsList = ({ currency }: SettingsListProps) => {
   return (
     <Card bordered>
       <Host matchContents={{ vertical: true }} colorScheme={theme}>
-        <Column verticalArrangement={{ spacedBy: 16 }} modifiers={[fillMaxWidth()]}>
+        <Column
+          verticalArrangement={{ spacedBy: 16 }}
+          modifiers={[fillMaxWidth()]}
+        >
           <Row
             horizontalArrangement="spaceBetween"
             verticalAlignment="center"

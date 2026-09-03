@@ -1,5 +1,6 @@
 import { Ionicons } from "@react-native-vector-icons/ionicons";
 import { Tabs } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCSSVariable } from "uniwind";
 
 const TabsLayout = () => {
@@ -13,6 +14,11 @@ const TabsLayout = () => {
     "--color-card",
   ]) as (string | undefined)[];
 
+  // The status-bar inset is applied here, once, for every tab. Doing it per
+  // screen with a SafeAreaView made each tab re-measure its inset on switch,
+  // which showed up as a small vertical jump.
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
@@ -25,7 +31,7 @@ const TabsLayout = () => {
         },
         sceneStyle: {
           backgroundColor: background,
-          paddingTop: 10,
+          paddingTop: insets.top + 10,
           paddingLeft: 15,
           paddingRight: 15,
         },
