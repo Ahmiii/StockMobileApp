@@ -5,11 +5,12 @@ import { useCSSVariable } from "uniwind";
 const TabsLayout = () => {
   // Navigators are configured with props, not className, so read the same
   // tokens out of the stylesheet. These re-resolve when the theme changes.
-  const [primary, muted, background, border] = useCSSVariable([
+  const [primary, muted, background, border, card] = useCSSVariable([
     "--color-primary",
     "--color-muted",
     "--color-background",
     "--color-border",
+    "--color-card",
   ]) as (string | undefined)[];
 
   return (
@@ -19,8 +20,14 @@ const TabsLayout = () => {
         tabBarActiveTintColor: primary,
         tabBarInactiveTintColor: muted,
         tabBarStyle: {
-          backgroundColor: background,
+          backgroundColor: card,
           borderTopColor: border,
+        },
+        sceneStyle: {
+          backgroundColor: background,
+          paddingTop: 10,
+          paddingLeft: 15,
+          paddingRight: 15,
         },
       }}
     >
@@ -28,7 +35,7 @@ const TabsLayout = () => {
         name="Portfolio"
         options={{
           title: "Portfolio",
-          tabBarIcon: ({ color, size, focused }) => (
+          tabBarIcon: ({ color, size }) => (
             <Ionicons name={"home-outline"} color={color} size={size} />
           ),
         }}
@@ -37,7 +44,7 @@ const TabsLayout = () => {
         name="Market"
         options={{
           title: "Market",
-          tabBarIcon: ({ color, size, focused }) => {
+          tabBarIcon: ({ color, size }) => {
             return (
               <Ionicons
                 name={"trending-up-outline"}
@@ -52,7 +59,7 @@ const TabsLayout = () => {
         name="Watch"
         options={{
           title: "Watch",
-          tabBarIcon: ({ color, size, focused }) => (
+          tabBarIcon: ({ color, size }) => (
             <Ionicons name={"star-outline"} color={color} size={size} />
           ),
         }}
@@ -61,7 +68,7 @@ const TabsLayout = () => {
         name="Trades"
         options={{
           title: "Trades",
-          tabBarIcon: ({ color, size, focused }) => (
+          tabBarIcon: ({ color, size }) => (
             <Ionicons name={"time-outline"} color={color} size={size} />
           ),
         }}
@@ -70,7 +77,7 @@ const TabsLayout = () => {
         name="Settings"
         options={{
           title: "Settings",
-          tabBarIcon: ({ color, size, focused }) => (
+          tabBarIcon: ({ color, size }) => (
             <Ionicons name={"settings-outline"} color={color} size={size} />
           ),
         }}

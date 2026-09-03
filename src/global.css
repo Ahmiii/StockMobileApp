@@ -1,48 +1,77 @@
 @import "tailwindcss";
 @import "uniwind";
 
+/* Crest Portfolio — extracted palette
+   Source: :root = dark theme, [data-theme="light"] = light theme
+   --acc → primary, --card2 → secondary, --up/--dn → success/danger */
+
 @theme {
-  --color-primary: #ffa500;
-  --color-primary-foreground: #ffffff;
+  --color-primary: #a87b2f;
+  --color-primary-foreground: #14100a;
+  --color-primary-soft: rgba(168, 123, 47, 0.12);
 
-  --color-secondary: #6b53d6;
-  --color-secondary-foreground: #ffffff;
+  --color-secondary: #efede7;
+  --color-secondary-foreground: #1b1d21;
 
-  --color-background: #ffffff;
-  --color-foreground: #0b1220;
-  --color-card: #f6f7f9;
-  --color-muted: #6b7280;
-  --color-border: #e5e7eb;
+  --color-background: #f6f5f1;
+  --color-foreground: #1b1d21;
+  --color-card: #ffffff;
+  --color-muted: #6e7378;
+  --color-border: rgba(20, 20, 25, 0.09);
+
+  --color-success: #20794e;
+  --color-success-soft: rgba(32, 121, 78, 0.1);
+  --color-danger: #b94a3c;
+  --color-danger-soft: rgba(185, 74, 60, 0.1);
 }
 
 @layer theme {
   :root {
     @variant light {
-      --color-primary: #ffa500;
-      --color-primary-foreground: #ffffff;
+      --color-primary: #a87b2f;
+      --color-primary-foreground: #14100a;
+      --color-primary-soft: rgba(168, 123, 47, 0.12);
 
-      --color-secondary: #6b53d6;
-      --color-secondary-foreground: #ffffff;
+      --color-secondary: #efede7;
+      --color-secondary-foreground: #1b1d21;
 
-      --color-background: #ffffff;
-      --color-foreground: #0b1220;
-      --color-card: #f6f7f9;
-      --color-muted: #6b7280;
-      --color-border: #e5e7eb;
+      --color-background: #f6f5f1;
+      --color-foreground: #1b1d21;
+      --color-card: #ffffff;
+      --color-muted: #6e7378;
+      --color-border: rgba(20, 20, 25, 0.09); /* solid: #eaeaea */
+
+      --color-success: #20794e;
+      --color-success-soft: rgba(32, 121, 78, 0.1);
+      --color-danger: #b94a3c;
+      --color-danger-soft: rgba(185, 74, 60, 0.1);
     }
 
     @variant dark {
-      --color-primary: #4da3ff;
-      --color-primary-foreground: #08131f;
+      --color-primary: #d0a24e;
+      --color-primary-foreground: #14100a;
+      --color-primary-soft: rgba(208, 162, 78, 0.14);
 
-      --color-secondary: #a78bfa;
-      --color-secondary-foreground: #12091f;
+      --color-secondary: #1f232a;
+      --color-secondary-foreground: #f1efe9;
 
-      --color-background: #0b1220;
-      --color-foreground: #e8eef7;
-      --color-card: #131c2b;
-      --color-muted: #94a3b8;
-      --color-border: #1f2b3d;
+      --color-background: #0e1013;
+      --color-foreground: #f1efe9;
+      --color-card: #171a1f;
+      --color-muted: #90959d;
+      --color-border: rgba(255, 255, 255, 0.08); /* solid: #2a2c31 */
+
+      --color-success: #4cad7e;
+      --color-success-soft: rgba(76, 173, 126, 0.14);
+      --color-danger: #d66a58;
+      --color-danger-soft: rgba(214, 106, 88, 0.14);
     }
   }
 }
+
+/* Alternate accents the app ships with (dark / light pair).
+   Swap into --color-primary; foreground stays #14100a for all four.
+     gold    #d0a24e / #a87b2f   (default)
+     teal    #4e9b8f / #2e7a6e
+     blue    #6e8fd0 / #3f63ae
+     purple  #a06e9e / #7e4e7c   */
