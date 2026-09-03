@@ -1,18 +1,31 @@
 import { Text } from "react-native";
 
-type Size = "sm" | "base" | "xs";
+type Size = "xs" | "sm" | "base" | "lg";
+type Color = "muted" | "foreground";
 
 const sizeClass: Record<Size, string> = {
+  xs: "text-xs font-bold",
   sm: "text-sm font-semibold",
   base: "text-base font-bold",
-  xs: "text-xs font-bold",
+  lg: "text-3xl font-bold",
 };
 
-type Props = { size?: Size; className?: string; children: React.ReactNode };
+const colorClass: Record<Color, string> = {
+  muted: "text-muted",
+  foreground: "text-foreground",
+};
 
-// Small muted heading used for section titles: "PORTFOLIO", "Since June", "Holdings".
-const Label = ({ size = "sm", className = "", children }: Props) => (
-  <Text className={`text-muted ${sizeClass[size]} ${className}`}>
+type Props = {
+  size?: Size;
+  color?: Color;
+  className?: string;
+  children: React.ReactNode;
+};
+
+// Heading text. Small and muted by default for section titles ("Holdings",
+// "Since June"). size="lg" color="foreground" is a screen title ("Watchlist").
+const Label = ({ size = "sm", color = "muted", className = "", children }: Props) => (
+  <Text className={`${colorClass[color]} ${sizeClass[size]} ${className}`}>
     {children}
   </Text>
 );

@@ -1,0 +1,104 @@
+import Badge from "@/atoms/Badge";
+import Card from "@/atoms/Card";
+import Divider from "@/atoms/Divider";
+import Label from "@/atoms/Label";
+import FilterChips, { type FilterOption } from "@/molecules/FilterChips";
+import { FlashList } from "@shopify/flash-list";
+import { useState } from "react";
+import { Text, View } from "react-native";
+
+export type Trade = {
+  id: string;
+  symbol: string; // "FFC"
+  side: "buy" | "sell";
+  quantity: number; // 100
+  price: number; // 191.2
+  /** Amount paid or received, fees included. */
+  total: number; // 19149
+  date: string; // "26 Aug 2026"
+};
+
+type Filter = "all" | "buy" | "sell";
+
+const FILTERS: FilterOption<Filter>[] = [
+  { value: "all", label: "All" },
+  { value: "buy", label: "Buys" },
+  { value: "sell", label: "Sells" },
+];
+
+type Props = {
+  title?: string;
+  source: string;
+  trades: Trade[];
+};
+
+const money = (n: number, decimals = 0) =>
+  n.toLocaleString("en-US", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+
+const Separator = () => <Divider className="my-3" />;
+const TradeHistory = ({ title = "Trades", source, trades }: Props) => {
+  const [filter, setFilter] = useState<Filter>("all");
+
+  const visible =
+    filter === "all" ? trades : trades.filter((trade) => trade.side === filter);
+
+  return (
+    <View className="flex-1 gap-4">
+      <View className="gap-1">
+        <Label size="lg" color="foreground">
+          {title}
+        </Label>
+        <Text className="text-base text-muted">
+          Synced from {source} · {trades.length} executions
+        </Text>
+      </View>
+
+      <FilterChips options={FILTERS} value={filter} onChange={setFilter} />
+
+      <Card bordered className="mb-4 flex-1">
+        <FlashList
+          data={visible}
+          keyExtractor={(trade) => trade.id}
+          renderItem={({ item }) => {
+            const isBuy = item.side === "buy";
+            return (
+              <View className="flex-row items-center gap-4">
+                <Badge
+                  label={isBuy ? "B" : "S"}
+                  tone={isBuy ? "success" : "danger"}
+                />
+
+                <View className="flex-1">
+                  <Text className="text-lg text-muted" numberOfLines={1}>
+                    <Text className="font-bold text-foreground">
+                      {item.symbol}
+                    </Text>{" "}
+                    {item.quantity} @ {money(item.price, 2)}
+                  </Text>
+                  <Text className="text-base text-muted">{item.date}</Text>
+                </View>
+
+                <View className="items-end">
+                  <Text className="text-lg font-bold text-foreground">
+                    Rs {money(item.total)}
+                  </Text>
+                  <Text className="text-sm text-muted">incl. fees</Text>
+                </View>
+              </View>
+            );
+          }}
+          ItemSeparatorComponent={Separator}
+          ListEmptyComponent={
+            <Text className="text-muted">No trades to show</Text>
+          }
+          showsVerticalScrollIndicator={false}
+        />
+      </Card>
+    </View>
+  );
+};
+
+export default TradeHistory;

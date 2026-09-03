@@ -3,13 +3,16 @@ import { View } from "react-native";
 
 type Props = {
   title: string;
-  size?: "sm" | "base";
+  size?: "xs" | "sm" | "base" | "lg";
+  color?: "muted" | "foreground";
   right?: React.ReactNode;
 };
 
-const SectionHeader = ({ title, size = "sm", right }: Props) => (
+const SectionHeader = ({ title, size = "sm", color = "muted", right }: Props) => (
   <View className="flex-row items-center justify-between">
-    <Label size={size}>{title}</Label>
+    <Label size={size} color={color}>
+      {title}
+    </Label>
     {right ?? null}
   </View>
 );
