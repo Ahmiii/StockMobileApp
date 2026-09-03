@@ -1,11 +1,12 @@
 import { View } from "react-native";
 
-type Tone = "success" | "danger" | "neutral";
+type Tone = "success" | "danger" | "neutral" | "primary";
 
 const toneClass: Record<Tone, string> = {
   success: "bg-success-soft",
   danger: "bg-danger-soft",
   neutral: "bg-secondary",
+  primary: "bg-primary-soft",
 };
 
 type Props = { tone?: Tone; className?: string; children: React.ReactNode };

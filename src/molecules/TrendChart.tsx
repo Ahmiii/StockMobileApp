@@ -49,13 +49,10 @@ const TrendChart = ({ series, height = 120, strokeWidth = 2 }: Props) => {
         y: inset + innerHeight * (1 - (v - min) / range),
       }));
 
-      // Skia 2.x: paths are immutable, so build them with PathBuilder.
       const builder = Skia.PathBuilder.Make();
       points.forEach((p, i) =>
         i === 0 ? builder.moveTo(p.x, p.y) : builder.lineTo(p.x, p.y),
       );
-      // build() snapshots without resetting, so the same builder can keep
-      // going to form the closed area shape underneath the line.
       const line = builder.build();
 
       let area: SkPath | null = null;
