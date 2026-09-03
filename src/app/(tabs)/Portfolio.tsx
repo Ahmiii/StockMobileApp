@@ -1,3 +1,5 @@
+import ChangeBadge from "@/molecules/ChangeBedge";
+import SectionHeader from "@/molecules/SectionHeader";
 import TrendChart from "@/molecules/TrendChart";
 import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -20,15 +22,7 @@ const Portfolio = () => {
         contentContainerClassName="gap-2 pb-6"
       >
         {/* Section: header */}
-        <View className="flex-row items-center justify-between">
-          <Text className="text-muted font-bold">PORTFOLIO</Text>
-          <View className="flex-row items-center gap-1.5 rounded-full border border-border bg-success-soft px-2.5 py-1">
-            <View className="size-1.5 rounded-full bg-success" />
-            <Text className="text-sm font-medium text-success">
-              Synced just now
-            </Text>
-          </View>
-        </View>
+        <SectionHeader profileLable="PORTFOLIO" syncStatusLable="Sync now" />
 
         {/* Section: summary card */}
         <View className="flex-col gap-2">
@@ -36,12 +30,7 @@ const Portfolio = () => {
             Rs 0.00
           </Text>
           <View className="flex-row gap-2 items-center">
-            <View className="rounded-full border border-border bg-success-soft px-2.5 py-1">
-              <Text className="text-sm font-bold text-success">
-                +Rs 2,745 · +0.48%
-              </Text>
-            </View>
-
+            <ChangeBadge amount="Rs 2,745" percent="+0.48" />
             <Text className="text-sm text-muted">today</Text>
           </View>
         </View>
@@ -70,12 +59,33 @@ const Portfolio = () => {
             ]}
           />
           <View className="flex-col gap-2">
+            <View className="h-px w-full bg-border" />
             <View className="flex-row items-center justify-between">
-              <View></View>
+              <View className="flex-row gap-3">
+                {/* Legend: solid swatch matches the portfolio line */}
+                <View className="flex-row items-center gap-1.5">
+                  <View className="h-0.5 w-4 rounded-full bg-primary" />
+                  <Text className="text-xs text-muted font-semibold">
+                    Portfolio
+                  </Text>
+                </View>
+                {/* Legend: dotted swatch matches the KSE-100 line */}
+                <View className="flex-row items-center gap-1.5">
+                  <View className="flex-row items-center gap-1">
+                    <View className="size-0.5 rounded-full bg-muted" />
+                    <View className="size-0.5 rounded-full bg-muted" />
+                    <View className="size-0.5 rounded-full bg-muted" />
+                    <View className="size-0.5 rounded-full bg-muted" />
+                  </View>
+                  <Text className="text-xs text-muted font-semibold">
+                    KSE-100
+                  </Text>
+                </View>
+              </View>
+              <Text className="text-xs text-muted font-bold text-success">
+                +11.8% vs KSE-100
+              </Text>
             </View>
-            <Text className="text-sm text-muted font-semibold text-success">
-              +233
-            </Text>
           </View>
         </View>
 
