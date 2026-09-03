@@ -89,7 +89,6 @@ const TrendChart = ({ series, height = 120, strokeWidth = 2 }: Props) => {
                 strokeJoin="round"
                 strokeCap="round"
               >
-                {/* A near-zero dash with round caps renders as a dot. */}
                 {p.dotted && (
                   <DashPathEffect intervals={[0.1, strokeWidth * 2.5]} />
                 )}

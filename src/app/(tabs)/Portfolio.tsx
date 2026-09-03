@@ -1,104 +1,34 @@
-import ChangeBadge from "@/molecules/ChangeBedge";
-import SectionHeader from "@/molecules/SectionHeader";
-import TrendChart from "@/molecules/TrendChart";
-import { ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useCSSVariable, withUniwind } from "uniwind";
-
-const StyledSafeAreaView = withUniwind(SafeAreaView);
+import HoldingsSection from "@/organisms/HoldingsSection";
+import InvestPnL from "@/organisms/Invest&PnL";
+import PerformanceCard from "@/organisms/PerformanceCard";
+import PortfolioHeader from "@/organisms/PortfolioHeader";
+import PortfolioSummary from "@/organisms/PortfolioSummary";
+import Screen from "@/templates/Screen";
 
 // Placeholder data until the portfolio history is wired up.
 const PORTFOLIO_TREND = [96, 98, 97, 101, 104, 103, 108, 111, 110, 116];
 const BENCHMARK_TREND = [96, 97, 99, 98, 100, 102, 101, 104, 105, 106];
 
-const Portfolio = () => {
-  // Skia's Canvas takes colors, not classes, so read the tokens directly.
-  const [primary, muted] = useCSSVariable(["--color-primary", "--color-muted"]);
+const Portfolio = () => (
+  <Screen>
+    <PortfolioHeader syncLabel="Sync now" />
 
-  return (
-    <StyledSafeAreaView className="flex-1" edges={["top"]}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerClassName="gap-2 pb-6"
-      >
-        {/* Section: header */}
-        <SectionHeader profileLable="PORTFOLIO" syncStatusLable="Sync now" />
+    <PortfolioSummary
+      value="Rs 0.00"
+      change={{ amount: "Rs 2,745", percent: "+0.48", caption: "today" }}
+    />
 
-        {/* Section: summary card */}
-        <View className="flex-col gap-2">
-          <Text className="mt-1 text-3xl font-bold text-foreground">
-            Rs 0.00
-          </Text>
-          <View className="flex-row gap-2 items-center">
-            <ChangeBadge amount="Rs 2,745" percent="+0.48" />
-            <Text className="text-sm text-muted">today</Text>
-          </View>
-        </View>
-
-        {/* Section: Analytics */}
-        <View className="flex-col gap-5 border border-border rounded-2xl bg-card p-4">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-sm text-muted font-semibold">Since June</Text>
-            <Text className="text-sm text-muted font-semibold text-success">
-              +233
-            </Text>
-          </View>
-          <TrendChart
-            height={120}
-            series={[
-              {
-                values: PORTFOLIO_TREND,
-                color: String(primary),
-                area: true,
-              },
-              {
-                values: BENCHMARK_TREND,
-                color: String(muted),
-                dotted: true,
-              },
-            ]}
-          />
-          <View className="flex-col gap-2">
-            <View className="h-px w-full bg-border" />
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row gap-3">
-                {/* Legend: solid swatch matches the portfolio line */}
-                <View className="flex-row items-center gap-1.5">
-                  <View className="h-0.5 w-4 rounded-full bg-primary" />
-                  <Text className="text-xs text-muted font-semibold">
-                    Portfolio
-                  </Text>
-                </View>
-                {/* Legend: dotted swatch matches the KSE-100 line */}
-                <View className="flex-row items-center gap-1.5">
-                  <View className="flex-row items-center gap-1">
-                    <View className="size-0.5 rounded-full bg-muted" />
-                    <View className="size-0.5 rounded-full bg-muted" />
-                    <View className="size-0.5 rounded-full bg-muted" />
-                    <View className="size-0.5 rounded-full bg-muted" />
-                  </View>
-                  <Text className="text-xs text-muted font-semibold">
-                    KSE-100
-                  </Text>
-                </View>
-              </View>
-              <Text className="text-xs text-muted font-bold text-success">
-                +11.8% vs KSE-100
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Section: holdings */}
-        <View className="gap-2">
-          <Text className="text-sm font-medium text-muted">Holdings</Text>
-          <View className="rounded-2xl bg-card p-4">
-            <Text className="text-foreground">No holdings yet</Text>
-          </View>
-        </View>
-      </ScrollView>
-    </StyledSafeAreaView>
-  );
-};
+    <PerformanceCard
+      period="Since June"
+      delta="+233"
+      portfolio={PORTFOLIO_TREND}
+      benchmark={BENCHMARK_TREND}
+      benchmarkName="KSE-100"
+      comparison="+11.8% vs KSE-100"
+    />
+    <InvestPnL />
+    <HoldingsSection holdings={[]} />
+  </Screen>
+);
 
 export default Portfolio;

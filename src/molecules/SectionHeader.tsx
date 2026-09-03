@@ -1,16 +1,17 @@
-import { Text, View } from "react-native";
-import SyncStatus from "./SyncStatusCard";
+import Label from "@/atoms/Label";
+import { View } from "react-native";
+
 type Props = {
-  profileLable: string;
-  syncStatusLable: string;
+  title: string;
+  size?: "sm" | "base";
+  right?: React.ReactNode;
 };
-const SectionHeader = ({ profileLable, syncStatusLable }: Props) => {
-  return (
-    <View className="flex-row items-center justify-between">
-      <Text className="text-muted font-bold">{profileLable}</Text>
-      <SyncStatus label={syncStatusLable} />
-    </View>
-  );
-};
+
+const SectionHeader = ({ title, size = "sm", right }: Props) => (
+  <View className="flex-row items-center justify-between">
+    <Label size={size}>{title}</Label>
+    {right ?? null}
+  </View>
+);
 
 export default SectionHeader;
