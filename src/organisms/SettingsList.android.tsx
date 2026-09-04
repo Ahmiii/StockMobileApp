@@ -64,7 +64,7 @@ const SettingsList = ({ currency }: SettingsListProps) => {
           >
             {label("Appearance")}
             <SingleChoiceSegmentedButtonRow>
-              {THEMES.map((option) => (
+              {THEMES?.map((option) => (
                 <SegmentedButton
                   key={option.value}
                   selected={theme === option.value}

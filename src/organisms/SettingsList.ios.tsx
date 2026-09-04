@@ -36,14 +36,19 @@ const SettingsList = ({ currency }: SettingsListProps) => {
   const dim = String(muted);
   const accent = String(primary);
 
-  const rowLabel = [font({ size: 17, weight: "semibold" }), foregroundColor(fg)];
+  const rowLabel = [
+    font({ size: 17, weight: "semibold" }),
+    foregroundColor(fg),
+  ];
   const rowValue = [font({ size: 17 }), foregroundColor(dim)];
 
   // Reuse the RN Pill rather than restyle a SwiftUI capsule.
   const soon = (
     <RNHostView matchContents>
       <Pill tone="primary">
-        <RNText className="text-xs font-bold uppercase text-primary">Soon</RNText>
+        <RNText className="text-xs font-bold uppercase text-primary">
+          Soon
+        </RNText>
       </Pill>
     </RNHostView>
   );
@@ -58,9 +63,13 @@ const SettingsList = ({ currency }: SettingsListProps) => {
             <Picker<Theme>
               selection={theme}
               onSelectionChange={(next) => Uniwind.setTheme(next)}
-              modifiers={[pickerStyle("segmented"), tint(accent), frame({ width: 160 })]}
+              modifiers={[
+                pickerStyle("segmented"),
+                tint(accent),
+                frame({ width: 160 }),
+              ]}
             >
-              {THEMES.map((option) => (
+              {THEMES?.map((option) => (
                 <Text key={option.value} modifiers={[tag(option.value)]}>
                   {option.label}
                 </Text>
