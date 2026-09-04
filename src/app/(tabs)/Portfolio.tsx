@@ -3,105 +3,105 @@ import InvestPnL from "@/organisms/Invest&PnL";
 import PerformanceCard from "@/organisms/PerformanceCard";
 import PortfolioHeader from "@/organisms/PortfolioHeader";
 import PortfolioSummary from "@/organisms/PortfolioSummary";
+import { useIndexPrices } from "@/queries/useMarket";
+import { useHoldings, usePortfolios } from "@/queries/usePortfolios";
 import Screen from "@/templates/Screen";
 
-// Placeholder data until the portfolio history is wired up.
-const PORTFOLIO_TREND = [96, 98, 97, 101, 104, 103, 108, 111, 110, 116];
-const BENCHMARK_TREND = [96, 97, 99, 98, 100, 102, 101, 104, 105, 106];
-const HOLDINGS: Holding[] = [
-  {
-    symbol: "OGDC",
-    name: "Oil & Gas Development",
-    value: "Rs 42,300",
-    change: "+1.2%",
-    tone: "success",
-    trend: [118, 119, 117, 121, 124, 123, 127, 126, 130, 132],
-  },
-  {
-    symbol: "LUCK",
-    name: "Lucky Cement",
-    value: "Rs 28,150",
-    change: "-0.6%",
-    tone: "danger",
-    trend: [910, 905, 912, 900, 895, 898, 890, 885, 888, 880],
-  },
-  {
-    symbol: "PPL",
-    name: "Pakistan Petroleum",
-    value: "Rs 19,870",
-    change: "+0.9%",
-    tone: "success",
-    trend: [150, 152, 151, 154, 153, 156, 158, 157, 160, 162],
-  },
-  {
-    symbol: "HBL",
-    name: "Habib Bank",
-    value: "Rs 15,400",
-    change: "+0.3%",
-    tone: "success",
-    trend: [128, 127, 129, 130, 129, 131, 130, 132, 133, 133],
-  },
-  {
-    symbol: "ENGRO",
-    name: "Engro Holdings",
-    value: "Rs 12,960",
-    change: "-1.4%",
-    tone: "danger",
-    trend: [340, 338, 341, 336, 333, 335, 330, 328, 326, 325],
-  },
-  {
-    symbol: "MARI",
-    name: "Mari Energies",
-    value: "Rs 11,250",
-    change: "+2.1%",
-    tone: "success",
-    trend: [560, 565, 563, 570, 575, 574, 580, 584, 590, 592],
-  },
-  {
-    symbol: "TRG",
-    name: "TRG Pakistan",
-    value: "Rs 8,730",
-    change: "0.0%",
-    tone: "neutral",
-    trend: [64, 65, 64, 66, 65, 64, 65, 65, 64, 64],
-  },
-  {
-    symbol: "SYS",
-    name: "Systems Limited",
-    value: "Rs 7,410",
-    change: "-0.2%",
-    tone: "danger",
-    trend: [410, 412, 409, 411, 408, 410, 407, 406, 408, 407],
-  },
-  {
-    symbol: "FFC",
-    name: "Fauji Fertilizer",
-    value: "Rs 6,980",
-    change: "+0.5%",
-    tone: "success",
-    trend: [112, 113, 112, 114, 115, 114, 116, 117, 117, 118],
-  },
-];
-const Portfolio = () => (
-  <Screen>
-    <PortfolioHeader syncLabel="Sync now" />
+// 1855.92 -> "1,855.92"
+const money = (n: number, decimals = 0) =>
+  n.toLocaleString("en-US", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
 
-    <PortfolioSummary
-      value="Rs 0.00"
-      change={{ amount: "Rs 2,745", percent: "+0.48", caption: "today" }}
-    />
+const toneOf = (n: number) => {
+  if (n > 0) return "success" as const;
+  if (n < 0) return "danger" as const;
+  return "neutral" as const;
+};
 
-    <PerformanceCard
-      period="Since June"
-      delta="+233"
-      portfolio={PORTFOLIO_TREND}
-      benchmark={BENCHMARK_TREND}
-      benchmarkName="KSE-100"
-      comparison="+11.8% vs KSE-100"
-    />
-    <InvestPnL />
-    <HoldingsSection holdings={HOLDINGS} />
-  </Screen>
-);
+// Rebase a series so it starts at 100. The performance chart draws both
+// lines on one scale, so the portfolio (Rs millions) and the index
+// (150,000 points) have to be brought to the same footing first.
+const rebase = (values: number[]) => {
+  const first = values[0] || 1;
+  return values.map((value) => (value / first) * 100);
+};
+
+const signed = (n: number) => `${n > 0 ? "+" : ""}${n.toFixed(1)}%`;
+
+const Portfolio = () => {
+  const { data: portfolios } = usePortfolios();
+  const { data } = useHoldings(portfolios?.[1]?.id ?? "");
+  const { data: bars } = useIndexPrices("KSE100");
+  const summary = data?.summary;
+
+  // Closed positions (quantity 0) only carry realized P&L; leave them out.
+  const openPositions = (data?.positions ?? []).filter(
+    (position) => position.quantity > 0,
+  );
+
+  const holdings: Holding[] = openPositions.map((position) => {
+    const pct = position.unrealizedPct ?? 0;
+    return {
+      symbol: position.symbol,
+      name: position.companyName,
+      detail: `${position.quantity} @ ${money(position.avgCost, 2)}`,
+      price: money(position.lastPrice, 2),
+      value: `Rs ${money(position.marketValue, 2)}`,
+      change: `${pct > 0 ? "+" : ""}${money(pct, 2)}%`,
+      tone: toneOf(position.unrealizedPnl),
+      trend: position.trend.map((point) => point.close),
+    };
+  });
+
+  const days = openPositions[0]?.trend.length ?? 0;
+  const portfolioValues: number[] = [];
+  for (let day = 0; day < days; day++) {
+    let total = 0;
+    for (const position of openPositions) {
+      const close = position.trend[day]?.close ?? position.lastPrice;
+      total += position.quantity * close;
+    }
+    portfolioValues.push(total);
+  }
+
+  // The index over the same number of days.
+  const indexValues = (bars ?? []).slice(-days).map((bar) => bar.close);
+
+  const portfolioTrend = rebase(portfolioValues);
+  const benchmarkTrend = rebase(indexValues);
+  const portfolioPct = (portfolioTrend[portfolioTrend.length - 1] ?? 100) - 100;
+  const indexPct = (benchmarkTrend[benchmarkTrend.length - 1] ?? 100) - 100;
+  const hasPerformance = portfolioTrend.length > 1 && benchmarkTrend.length > 1;
+
+  return (
+    <Screen>
+      <PortfolioHeader syncLabel="Sync now" />
+      <PortfolioSummary
+        value="Rs 0.00"
+        change={{ amount: "Rs 2,745", percent: "+0.48", caption: "today" }}
+      />
+
+      {hasPerformance ? (
+        <PerformanceCard
+          period={`Last ${days} days`}
+          delta={signed(portfolioPct)}
+          portfolio={portfolioTrend}
+          benchmark={benchmarkTrend}
+          benchmarkName="KSE-100"
+          comparison={`${signed(portfolioPct - indexPct)} vs KSE-100`}
+        />
+      ) : null}
+
+      <InvestPnL
+        invested={Math.round(summary?.invested ?? 0)}
+        unrealizedPnl={Math.round(summary?.unrealizedPnl ?? 0)}
+      />
+
+      <HoldingsSection holdings={holdings} />
+    </Screen>
+  );
+};
 
 export default Portfolio;

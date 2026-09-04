@@ -22,6 +22,7 @@ const AuthLayout = () => {
     >
       <Stack.Screen name="welcome" />
       <Stack.Screen name="link-broker" />
+      <Stack.Screen name="portfolios" />
     </Stack>
   );
 };

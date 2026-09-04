@@ -2,25 +2,28 @@ import Button from "@/atoms/Button";
 import InfoNote from "@/atoms/InfoNote";
 import Label from "@/atoms/Label";
 import TextField from "@/atoms/TextField";
-import { linkBroker } from "@/queries/useLogin";
+import { useLinkBroker } from "@/queries/useLogin";
 import { router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { KeyboardAvoidingView, Platform, Text, View } from "react-native";
 type Form = {
-  clientCode: string;
-  pin: string;
+  accountNumber: string;
+  password: string;
 };
 
 const LinkBrokerAccount = () => {
   const { control, handleSubmit } = useForm<Form>({
-    defaultValues: { clientCode: "", pin: "" },
+    defaultValues: { accountNumber: "", password: "" },
     mode: "onBlur",
   });
-  const linkMutation = linkBroker();
+  const linkMutation = useLinkBroker();
 
   const connect = (values: Form) => {
     linkMutation.mutate(values, {
-      onSuccess: () => router.replace("/Portfolio"),
+      onSuccess: () => {
+        // Let the user pick which portfolio on the account to track.
+        router.replace("/portfolios");
+      },
     });
   };
 
@@ -44,13 +47,9 @@ const LinkBrokerAccount = () => {
         <View className="gap-3">
           <Controller
             control={control}
-            name="clientCode"
+            name="accountNumber"
             rules={{
               required: "Client code is required",
-              pattern: {
-                value: /^\d+-\d+$/,
-                message: "Use the format 14203-8",
-              },
             }}
             render={({ field, fieldState }) => (
               <TextField
@@ -66,13 +65,9 @@ const LinkBrokerAccount = () => {
 
           <Controller
             control={control}
-            name="pin"
+            name="password"
             rules={{
               required: "PIN is required",
-              pattern: {
-                value: /^\d{4,6}$/,
-                message: "PIN is 4 to 6 digits",
-              },
             }}
             render={({ field, fieldState }) => (
               <TextField
@@ -82,7 +77,6 @@ const LinkBrokerAccount = () => {
                 onBlur={field.onBlur}
                 placeholder="••••"
                 secure
-                keyboardType="number-pad"
                 error={fieldState.error?.message}
               />
             )}

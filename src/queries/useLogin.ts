@@ -7,7 +7,7 @@ export const useLogin = () =>
     retry: false,
   });
 
-export const linkBroker = () =>
+export const useLinkBroker = () =>
   useMutation({
     mutationFn: linkBrokerAccount,
     retry: false,

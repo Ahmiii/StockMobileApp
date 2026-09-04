@@ -12,8 +12,8 @@ export type User = {
 };
 
 export type BrokerAccountRequest = {
-  clientCode: string;
-  pin: string;
+  accountNumber: string;
+  password: string;
 };
 
 const login = async (body: LoginRequest) => {
@@ -30,12 +30,8 @@ const logout = () => {
 };
 
 const linkBrokerAccount = async (body: BrokerAccountRequest) => {
-  const response = await client.post("broker/accounts", body);
-  if (response.data.status !== "success") {
-    throw new Error("Login failed");
-  }
-  const { data } = response.data;
-  return data;
+  const response = await client.post("/broker/accounts", body);
+  return response.data.data;
 };
 
 export { linkBrokerAccount, login, logout };

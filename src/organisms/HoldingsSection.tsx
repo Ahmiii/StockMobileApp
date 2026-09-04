@@ -23,6 +23,8 @@ export type Holding = {
   name: string; // "Oil & Gas Development"
   value: string; // "Rs 42,300"
   change: string; // "+1.2%"
+  detail?: string;
+  price?: string; // "56.24", last traded price
   tone?: Tone;
   trend?: number[];
 };
@@ -54,10 +56,15 @@ const HoldingsSection = ({ holdings, height = 280 }: Props) => {
             return (
               <Card bordered>
                 <View className="flex-row items-center justify-between">
-                  <View>
+                  <View className="w-24">
                     <Text className="font-semibold text-foreground">
                       {item.symbol}
                     </Text>
+                    {item.detail ? (
+                      <Text className="text-xs text-muted" numberOfLines={1}>
+                        {item.detail}
+                      </Text>
+                    ) : null}
                   </View>
                   {item.trend ? (
                     <View className="flex-1 px-4">
@@ -75,11 +82,17 @@ const HoldingsSection = ({ holdings, height = 280 }: Props) => {
                     <Text className="font-semibold text-foreground">
                       {item.value}
                     </Text>
-                    <Text
-                      className={`text-xs font-semibold ${textClass[tone]}`}
-                    >
-                      {item.change}
-                    </Text>
+                    {/* Last price in muted, then the change in its tone color. */}
+                    <View className="flex-row items-center gap-1.5">
+                      {item.price ? (
+                        <Text className="text-xs text-muted">{item.price}</Text>
+                      ) : null}
+                      <Text
+                        className={`text-xs font-semibold ${textClass[tone]}`}
+                      >
+                        {item.change}
+                      </Text>
+                    </View>
                   </View>
                 </View>
               </Card>
