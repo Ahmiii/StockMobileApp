@@ -89,6 +89,7 @@ const Portfolio = () => {
           delta={signed(portfolioPct)}
           portfolio={portfolioTrend}
           benchmark={benchmarkTrend}
+          dates={openPositions[0]?.trend.map((point) => point.date) ?? []}
           benchmarkName="KSE-100"
           comparison={`${signed(portfolioPct - indexPct)} vs KSE-100`}
         />

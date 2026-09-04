@@ -7,12 +7,25 @@ import { Text, View } from "react-native";
 import { useCSSVariable } from "uniwind";
 
 type Props = {
-  period: string; // "Since June"
-  delta: string; // "+233"
+  period: string; // "Last 30 days"
+  delta: string; // "+2.1%"
+  /** Both series rebased to 100 at the first point. */
   portfolio: number[];
   benchmark: number[];
+  /** One ISO date per point, e.g. "2026-08-04". Drives the scrub tooltip. */
+  dates: string[];
   benchmarkName: string; // "KSE-100"
   comparison: string; // "+11.8% vs KSE-100"
+};
+
+// "2026-08-04" -> "4 Aug"
+const shortDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+
+// Rebased value -> change since the first point, e.g. 102.13 -> "+2.13%".
+const asChange = (value: number) => {
+  const change = value - 100;
+  return `${change > 0 ? "+" : ""}${change.toFixed(2)}%`;
 };
 
 const PerformanceCard = ({
@@ -20,6 +33,7 @@ const PerformanceCard = ({
   delta,
   portfolio,
   benchmark,
+  dates,
   benchmarkName,
   comparison,
 }: Props) => {
@@ -36,9 +50,11 @@ const PerformanceCard = ({
 
       <TrendChart
         height={120}
+        labels={dates.map(shortDate)}
+        formatValue={asChange}
         series={[
-          { values: portfolio, color: String(primary), area: true },
-          { values: benchmark, color: String(muted), dotted: true },
+          { values: portfolio, color: String(primary), area: true, label: "Portfolio" },
+          { values: benchmark, color: String(muted), dotted: true, label: benchmarkName },
         ]}
       />
 
