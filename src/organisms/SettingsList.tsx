@@ -1,21 +1,11 @@
 import Card from "@/atoms/Card";
 import Divider from "@/atoms/Divider";
 import Pill from "@/atoms/Pill";
-import FilterChips, { type FilterOption } from "@/molecules/FilterChips";
+import FilterChips from "@/molecules/FilterChips";
 import SectionHeader from "@/molecules/SectionHeader";
 import { Text, View } from "react-native";
 import { Uniwind, useUniwind } from "uniwind";
-
-export type Theme = "dark" | "light";
-
-export const THEMES: FilterOption<Theme>[] = [
-  { value: "dark", label: "Dark" },
-  { value: "light", label: "Light" },
-];
-
-export type SettingsListProps = {
-  currency: string; // "PKR"
-};
+import { THEMES, type SettingsListProps } from "./settingsListShared";
 
 // Web fallback only. iOS renders SettingsList.ios.tsx (SwiftUI) and Android
 // renders SettingsList.android.tsx (Jetpack Compose); Metro picks by platform.

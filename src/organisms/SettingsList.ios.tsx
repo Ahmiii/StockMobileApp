@@ -12,7 +12,7 @@ import {
 } from "@expo/ui/swift-ui";
 import {
   font,
-  foregroundColor,
+  foregroundStyle,
   frame,
   pickerStyle,
   tag,
@@ -20,7 +20,7 @@ import {
 } from "@expo/ui/swift-ui/modifiers";
 import { Text as RNText } from "react-native";
 import { Uniwind, useCSSVariable, useUniwind } from "uniwind";
-import { THEMES, type SettingsListProps, type Theme } from "./SettingsList";
+import { THEMES, type SettingsListProps, type Theme } from "./settingsListShared";
 
 // iOS: native SwiftUI rows inside the app's Card. The theme switch is a real
 // segmented UISegmentedControl. SwiftUI takes colors, not classes, so the
@@ -38,9 +38,9 @@ const SettingsList = ({ currency }: SettingsListProps) => {
 
   const rowLabel = [
     font({ size: 17, weight: "semibold" }),
-    foregroundColor(fg),
+    foregroundStyle(fg),
   ];
-  const rowValue = [font({ size: 17 }), foregroundColor(dim)];
+  const rowValue = [font({ size: 17 }), foregroundStyle(dim)];
 
   // Reuse the RN Pill rather than restyle a SwiftUI capsule.
   const soon = (
@@ -69,7 +69,7 @@ const SettingsList = ({ currency }: SettingsListProps) => {
                 frame({ width: 160 }),
               ]}
             >
-              {THEMES?.map((option) => (
+              {THEMES.map((option) => (
                 <Text key={option.value} modifiers={[tag(option.value)]}>
                   {option.label}
                 </Text>

@@ -13,7 +13,7 @@ import {
 import { fillMaxWidth } from "@expo/ui/jetpack-compose/modifiers";
 import { Text as RNText } from "react-native";
 import { Uniwind, useCSSVariable, useUniwind } from "uniwind";
-import { THEMES, type SettingsListProps } from "./SettingsList";
+import { THEMES, type SettingsListProps } from "./settingsListShared";
 
 const SettingsList = ({ currency }: SettingsListProps) => {
   const { theme } = useUniwind();
@@ -64,7 +64,7 @@ const SettingsList = ({ currency }: SettingsListProps) => {
           >
             {label("Appearance")}
             <SingleChoiceSegmentedButtonRow>
-              {THEMES?.map((option) => (
+              {THEMES.map((option) => (
                 <SegmentedButton
                   key={option.value}
                   selected={theme === option.value}
