@@ -11,7 +11,6 @@ const Screen = ({ className = "", scroll = true, children }: Props) =>
     <ScrollView
       className="flex-1"
       showsVerticalScrollIndicator={false}
-      // iOS otherwise rubber-bands even when the content fits on screen.
       alwaysBounceVertical={false}
       contentContainerClassName={`gap-2 pb-6 ${className}`}
     >

@@ -2,23 +2,26 @@ import Button from "@/atoms/Button";
 import InfoNote from "@/atoms/InfoNote";
 import Label from "@/atoms/Label";
 import TextField from "@/atoms/TextField";
+import { linkBroker } from "@/queries/useLogin";
 import { router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { KeyboardAvoidingView, Platform, Text, View } from "react-native";
-
 type Form = {
   clientCode: string;
   pin: string;
 };
 
-const LinkBroker = () => {
+const LinkBrokerAccount = () => {
   const { control, handleSubmit } = useForm<Form>({
     defaultValues: { clientCode: "", pin: "" },
     mode: "onBlur",
   });
+  const linkMutation = linkBroker();
 
-  const connect = (_values: Form) => {
-    router.replace("/Portfolio");
+  const connect = (values: Form) => {
+    linkMutation.mutate(values, {
+      onSuccess: () => router.replace("/Portfolio"),
+    });
   };
 
   return (
@@ -97,4 +100,4 @@ const LinkBroker = () => {
   );
 };
 
-export default LinkBroker;
+export default LinkBrokerAccount;

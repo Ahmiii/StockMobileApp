@@ -15,6 +15,8 @@ const textClass: Record<Variant, string> = {
 type Props = {
   label: string;
   variant?: Variant;
+  /** Blocks presses and dims the button, e.g. while a request is in flight. */
+  disabled?: boolean;
   onPress?: () => void;
   className?: string;
 };
@@ -22,12 +24,14 @@ type Props = {
 const Button = ({
   label,
   variant = "soft",
+  disabled = false,
   onPress,
   className = "",
 }: Props) => (
   <Pressable
     onPress={onPress}
-    className={`items-center rounded-2xl py-4 ${boxClass[variant]} ${className}`}
+    disabled={disabled}
+    className={`items-center rounded-2xl py-4 ${boxClass[variant]} ${disabled ? "opacity-60" : ""} ${className}`}
   >
     <Text className={`text-lg font-bold ${textClass[variant]}`}>{label}</Text>
   </Pressable>
