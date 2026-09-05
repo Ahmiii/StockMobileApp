@@ -5,7 +5,8 @@ import Label from "@/atoms/Label";
 import FilterChips, { type FilterOption } from "@/molecules/FilterChips";
 import { FlashList } from "@shopify/flash-list";
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
+import { useCSSVariable } from "uniwind";
 
 export type Trade = {
   id: string;
@@ -30,6 +31,11 @@ type Props = {
   title?: string;
   source: string;
   trades: Trade[];
+  /** Total on the server, when the list is paginated and not all loaded yet. */
+  total?: number;
+  /** Called when the list scrolls near the end; load the next page here. */
+  onEndReached?: () => void;
+  isLoadingMore?: boolean;
 };
 
 const money = (n: number, decimals = 0) =>
@@ -39,8 +45,17 @@ const money = (n: number, decimals = 0) =>
   });
 
 const Separator = () => <Divider className="my-3" />;
-const TradeHistory = ({ title = "Trades", source, trades }: Props) => {
+
+const TradeHistory = ({
+  title = "Trades",
+  source,
+  trades,
+  total,
+  onEndReached,
+  isLoadingMore = false,
+}: Props) => {
   const [filter, setFilter] = useState<Filter>("all");
+  const [primary] = useCSSVariable(["--color-primary"]);
 
   const visible =
     filter === "all" ? trades : trades.filter((trade) => trade.side === filter);
@@ -52,7 +67,7 @@ const TradeHistory = ({ title = "Trades", source, trades }: Props) => {
           {title}
         </Label>
         <Text className="text-base text-muted">
-          Synced from {source} · {trades.length} executions
+          Synced from {source} · {total ?? trades.length} executions
         </Text>
       </View>
 
@@ -93,6 +108,14 @@ const TradeHistory = ({ title = "Trades", source, trades }: Props) => {
           ItemSeparatorComponent={Separator}
           ListEmptyComponent={
             <Text className="text-muted">No trades to show</Text>
+          }
+          // Fires when the last rows come into view; the screen loads the next page.
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            isLoadingMore ? (
+              <ActivityIndicator className="py-4" color={String(primary)} />
+            ) : null
           }
           showsVerticalScrollIndicator={false}
         />

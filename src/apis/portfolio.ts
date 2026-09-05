@@ -57,12 +57,54 @@ export type HoldingsSummary = {
   unpricedPositions: number;
 };
 
-const getHoldings = async (portfolioId: string) => {
-  const response = await client.get(`/portfolio/${portfolioId}/positions`);
+export type DateRange = { from: string; to: string }; // ISO dates
+
+// `range` bounds each position's trend. Without it the backend returns the
+// last year. It echoes the range it used in the response.
+const getHoldings = async (portfolioId: string, range?: DateRange) => {
+  const response = await client.get(`/portfolio/${portfolioId}/positions`, {
+    params: range,
+  });
   const positions: Position[] = response.data.data.positions;
   const summary: HoldingsSummary = response.data.data.summary;
-  return { positions, summary };
+  const usedRange: DateRange = response.data.data.range;
+  return { positions, summary, range: usedRange };
 };
 
-export { getHoldings, getPortfolios };
+// One trade as the backend sends it (GET /portfolio/:id/trades).
+// Numbers arrive as strings; convert with Number() where they are used.
+export type TradeItem = {
+  id: string;
+  portfolioId: string;
+  side: "BUY" | "SELL";
+  quantity: string;
+  price: string;
+  commission: string;
+  netAmount: string;
+  executedAt: string; // ISO date
+  security: {
+    symbol: string;
+    companyName: string;
+  };
+};
+
+export type TradesPage = {
+  trades: TradeItem[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+};
+
+const getTrades = async (portfolioId: string, offset: number, limit = 50) => {
+  const response = await client.get(`/portfolio/${portfolioId}/trades`, {
+    params: { limit, offset },
+  });
+  const page: TradesPage = response.data.data;
+  return page;
+};
+
+export { getHoldings, getPortfolios, getTrades };
 

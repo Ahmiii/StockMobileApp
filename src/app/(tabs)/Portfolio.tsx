@@ -1,11 +1,18 @@
+import RangePicker, {
+  PERIOD_LABEL,
+  rangeDates,
+  type Range,
+} from "@/molecules/RangePicker";
 import HoldingsSection, { type Holding } from "@/organisms/HoldingsSection";
 import InvestPnL from "@/organisms/Invest&PnL";
 import PerformanceCard from "@/organisms/PerformanceCard";
 import PortfolioHeader from "@/organisms/PortfolioHeader";
+import PortfolioSkeleton from "@/organisms/PortfolioSkeleton";
 import PortfolioSummary from "@/organisms/PortfolioSummary";
 import { useIndexPrices } from "@/queries/useMarket";
 import { useHoldings, usePortfolios } from "@/queries/usePortfolios";
 import Screen from "@/templates/Screen";
+import { useState } from "react";
 
 // 1855.92 -> "1,855.92"
 const money = (n: number, decimals = 0) =>
@@ -31,15 +38,24 @@ const rebase = (values: number[]) => {
 const signed = (n: number) => `${n > 0 ? "+" : ""}${n.toFixed(1)}%`;
 
 const Portfolio = () => {
+  const [range, setRange] = useState<Range>("1Y");
+  const dates = rangeDates(range);
+
   const { data: portfolios } = usePortfolios();
-  const { data } = useHoldings(portfolios?.[1]?.id ?? "");
-  const { data: bars } = useIndexPrices("KSE100");
+  // isPending is true until the first holdings result for this range arrives,
+  // including while we're still waiting on the portfolio id.
+  const { data, isPending } = useHoldings(portfolios?.[1]?.id ?? "", dates);
+  // Fetch five years of the index once; every picked range is a slice of it.
+  const indexDates = rangeDates("5Y");
+  const { data: bars } = useIndexPrices("KSE100", indexDates.from, indexDates.to);
   const summary = data?.summary;
 
-  // Closed positions (quantity 0) only carry realized P&L; leave them out.
-  const openPositions = (data?.positions ?? []).filter(
-    (position) => position.quantity > 0,
-  );
+  const openPositions = (data?.positions ?? [])
+    .filter((position) => position.quantity > 0)
+    .map((position) => ({
+      ...position,
+      trend: [...position.trend].sort((a, b) => a.date.localeCompare(b.date)),
+    }));
 
   const holdings: Holding[] = openPositions.map((position) => {
     const pct = position.unrealizedPct ?? 0;
@@ -55,6 +71,8 @@ const Portfolio = () => {
     };
   });
 
+  // Portfolio value per day: sum of quantity × close across holdings, over
+  // the days the backend returned for the picked range.
   const days = openPositions[0]?.trend.length ?? 0;
   const portfolioValues: number[] = [];
   for (let day = 0; day < days; day++) {
@@ -66,14 +84,25 @@ const Portfolio = () => {
     portfolioValues.push(total);
   }
 
-  // The index over the same number of days.
-  const indexValues = (bars ?? []).slice(-days).map((bar) => bar.close);
+  // The index over the same dates, so both lines cover the picked range.
+  const indexValues = (bars ?? [])
+    .filter((bar) => bar.date >= dates.from && bar.date <= dates.to)
+    .map((bar) => bar.close);
 
   const portfolioTrend = rebase(portfolioValues);
   const benchmarkTrend = rebase(indexValues);
   const portfolioPct = (portfolioTrend[portfolioTrend.length - 1] ?? 100) - 100;
   const indexPct = (benchmarkTrend[benchmarkTrend.length - 1] ?? 100) - 100;
   const hasPerformance = portfolioTrend.length > 1 && benchmarkTrend.length > 1;
+
+  if (isPending) {
+    return (
+      <Screen>
+        <PortfolioHeader syncLabel="Sync now" />
+        <PortfolioSkeleton />
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
@@ -83,9 +112,11 @@ const Portfolio = () => {
         change={{ amount: "Rs 2,745", percent: "+0.48", caption: "today" }}
       />
 
+      <RangePicker value={range} onChange={setRange} />
+
       {hasPerformance ? (
         <PerformanceCard
-          period={`Last ${days} days`}
+          period={PERIOD_LABEL[range]}
           delta={signed(portfolioPct)}
           portfolio={portfolioTrend}
           benchmark={benchmarkTrend}

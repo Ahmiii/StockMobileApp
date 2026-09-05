@@ -41,7 +41,7 @@ const StocksVsIndex = ({
   const [primary, muted] = useCSSVariable(["--color-primary", "--color-muted"]);
   const stockColor = String(primary);
   const indexColor = String(muted);
-
+  console.log({ stocks });
   return (
     <View className="gap-2">
       <SectionHeader
@@ -77,7 +77,11 @@ const StocksVsIndex = ({
                     height={32}
                     strokeWidth={1.5}
                     series={[
-                      { values: item.benchmark, color: indexColor, dotted: true },
+                      {
+                        values: item.benchmark,
+                        color: indexColor,
+                        dotted: true,
+                      },
                       { values: item.trend, color: stockColor },
                     ]}
                   />
