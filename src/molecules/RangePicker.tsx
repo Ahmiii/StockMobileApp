@@ -2,22 +2,29 @@ import Chip from "@/atoms/Chip";
 import RangeSheet from "@/molecules/RangeSheet";
 import { useState } from "react";
 import { View, type LayoutChangeEvent } from "react-native";
-import { RANGES, type Range } from "./rangePickerShared";
+import type { RangeOption } from "./rangePickerShared";
 
-export { PERIOD_LABEL, rangeDates, type Range } from "./rangePickerShared";
+export {
+  PERIOD_LABEL,
+  RANGES,
+  rangeDates,
+  type Range,
+  type RangeOption,
+} from "./rangePickerShared";
 
-// The row uses gap-2 between chips.
+// Space between chips (the row's gap-2).
 const GAP = 8;
 
-type Props = {
-  value: Range;
-  onChange: (value: Range) => void;
+type Props<T extends string> = {
+  options: RangeOption<T>[];
+  value: T;
+  onChange: (value: T) => void;
 };
 
 // Shows as many chips as fit on one line, then a "…" chip. Tapping "…" opens
 // a native list of the rest; when the pick comes from that list the "…"
 // chip is highlighted, and the sheet shows a checkmark on the chosen row.
-const RangePicker = ({ value, onChange }: Props) => {
+const RangePicker = <T extends string>({ options, value, onChange }: Props<T>) => {
   const [rowWidth, setRowWidth] = useState(0);
   const [chipWidth, setChipWidth] = useState(0);
   const [open, setOpen] = useState(false);
@@ -25,23 +32,24 @@ const RangePicker = ({ value, onChange }: Props) => {
   const onRowLayout = (e: LayoutChangeEvent) =>
     setRowWidth(e.nativeEvent.layout.width);
 
-  // Measure the first chip once; every chip has the same padding and a
-  // two-character label, so they're all this wide.
-  const onChipLayout = (e: LayoutChangeEvent) => {
-    if (chipWidth === 0) setChipWidth(e.nativeEvent.layout.width);
-  };
+  // Every chip has the same padding and a short label, so measuring the
+  // first one is enough to know how wide they all are.
+  const onChipLayout = (e: LayoutChangeEvent) =>
+    setChipWidth(e.nativeEvent.layout.width);
 
-  // n chips + gaps + the "…" chip must fit: n·w + n·gap + w <= row.
+  // How many chips fit, keeping one slot for "…". Until both widths are
+  // known, show a single chip so the measurement can happen.
   let visibleCount = 1;
   if (rowWidth > 0 && chipWidth > 0) {
-    visibleCount = Math.floor((rowWidth - chipWidth) / (chipWidth + GAP));
+    const perChip = chipWidth + GAP;
+    visibleCount = Math.floor((rowWidth - chipWidth) / perChip);
   }
   if (visibleCount < 1) visibleCount = 1;
-  if (visibleCount >= RANGES.length) visibleCount = RANGES.length;
+  if (visibleCount >= options.length) visibleCount = options.length;
 
-  const visible = RANGES.slice(0, visibleCount);
-  const overflow = RANGES.slice(visibleCount);
-  const overflowSelected = overflow.find((option) => option.value === value);
+  const visible = options.slice(0, visibleCount);
+  const overflow = options.slice(visibleCount);
+  const overflowSelected = overflow.some((option) => option.value === value);
 
   return (
     <View onLayout={onRowLayout} className="flex-row gap-2">
@@ -55,13 +63,8 @@ const RangePicker = ({ value, onChange }: Props) => {
         </View>
       ))}
 
-      {/* Always reads "…"; it highlights when the pick came from the sheet. */}
       {overflow.length > 0 ? (
-        <Chip
-          label="…"
-          active={overflowSelected !== undefined}
-          onPress={() => setOpen(true)}
-        />
+        <Chip label="…" active={overflowSelected} onPress={() => setOpen(true)} />
       ) : null}
 
       <RangeSheet

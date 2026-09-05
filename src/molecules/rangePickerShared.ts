@@ -1,6 +1,20 @@
 // Shared by RangePicker.tsx and the RangeSheet platform files. Lives in its
 // own file so a platform file never imports its own base name (require cycle).
 
+/** One chip / sheet row. `T` is the union of allowed values for that picker. */
+export type RangeOption<T extends string = string> = { value: T; label: string };
+
+/** The native list that opens from the "…" chip. */
+export type RangeSheetProps<T extends string = string> = {
+  visible: boolean;
+  options: RangeOption<T>[];
+  value: T;
+  onSelect: (value: T) => void;
+  onClose: () => void;
+};
+
+// ---- The Portfolio tab's ranges (turned into from/to dates) ----------------
+
 export type Range =
   | "1D"
   | "7D"
@@ -13,9 +27,7 @@ export type Range =
   | "4Y"
   | "5Y";
 
-export type RangeOption = { value: Range; label: string };
-
-export const RANGES: RangeOption[] = [
+export const RANGES: RangeOption<Range>[] = [
   { value: "1D", label: "1D" },
   { value: "7D", label: "7D" },
   { value: "1M", label: "1M" },
@@ -57,13 +69,4 @@ export const rangeDates = (range: Range, today = new Date()): DateRange => {
   if (unit === "Y") from.setFullYear(from.getFullYear() - amount);
 
   return { from: isoDate(from), to: isoDate(today) };
-};
-
-/** The native list that opens from the "…" chip. */
-export type RangeSheetProps = {
-  visible: boolean;
-  options: RangeOption[];
-  value: Range;
-  onSelect: (value: Range) => void;
-  onClose: () => void;
 };

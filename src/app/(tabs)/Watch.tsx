@@ -1,55 +1,71 @@
+import Skeleton from "@/atoms/Skeleton";
 import Watchlist, { type WatchItem } from "@/organisms/Watchlist";
+import { useWatchlist } from "@/queries/useWatchlist";
 import Screen from "@/templates/Screen";
+import { router } from "expo-router";
+import { Text, View } from "react-native";
 
-// Placeholder data until the watchlist is wired up.
-const WATCHLIST: WatchItem[] = [
-  {
-    symbol: "HBL",
-    name: "Habib Bank",
-    price: 245.6,
-    change: 1.1,
-    target: 280,
-    trend: [228, 231, 230, 234, 233, 236, 238, 240, 243, 245.6],
-  },
-  {
-    symbol: "ENGRO",
-    name: "Engro Holdings",
-    price: 412.85,
-    change: 0.9,
-    target: 450,
-    trend: [390, 394, 398, 397, 402, 405, 404, 408, 410, 412.85],
-  },
-  {
-    symbol: "UBL",
-    name: "United Bank",
-    price: 372.1,
-    change: 0.7,
-    target: 400,
-    trend: [350, 352, 356, 355, 360, 363, 366, 370, 374, 372.1],
-  },
-  {
-    symbol: "MARI",
-    name: "Mari Energies",
-    price: 612.35,
-    change: 4.1,
-    target: 700,
-    trend: [560, 565, 570, 576, 580, 588, 594, 600, 606, 612.35],
-  },
-  {
-    symbol: "AIRLINK",
-    name: "Air Link Communication",
-    price: 182.4,
-    change: 7.2,
-    target: 200,
-    trend: [160, 164, 168, 171, 170, 174, 176, 178, 180, 182.4],
-  },
-];
+// Three grey rows while the first result loads. Cheap: no charts, no lists.
+const WatchSkeleton = () => (
+  <View className="gap-3">
+    <Skeleton className="h-9 w-40" />
+    <Skeleton className="h-4 w-48" />
+    <Skeleton className="h-20 w-full rounded-2xl" />
+    <Skeleton className="h-20 w-full rounded-2xl" />
+    <Skeleton className="h-20 w-full rounded-2xl" />
+  </View>
+);
 
 // The list is the screen's scroller, so the Screen itself must not scroll.
-const Watch = () => (
-  <Screen scroll={false}>
-    <Watchlist items={WATCHLIST} />
-  </Screen>
-);
+const Watch = () => {
+  const { data, isPending, error } = useWatchlist();
+
+  if (isPending) {
+    return (
+      <Screen scroll={false}>
+        <WatchSkeleton />
+      </Screen>
+    );
+  }
+
+  if (error) {
+    return (
+      <Screen scroll={false}>
+        <Text className="text-danger">{error.message}</Text>
+      </Screen>
+    );
+  }
+
+  // Chart and target are left out for now; the organism shows them only
+  // when an item carries `trend` or `target`.
+  const items: WatchItem[] = data.items.map((security) => ({
+    symbol: security.symbol,
+    name: security.companyName,
+    sector: security.sector ?? undefined,
+    price: security.lastPrice,
+    change: security.changePct,
+  }));
+
+  const benchmark = {
+    name: data.benchmark.companyName,
+    price: data.benchmark.lastPrice ?? 0,
+    change: data.benchmark.changePct ?? 0,
+  };
+
+  return (
+    <Screen scroll={false}>
+      <Watchlist
+        items={items}
+        benchmark={benchmark}
+        onPressItem={(item) =>
+          router.push({
+            pathname: "/stock/[symbol]",
+            params: { symbol: item.symbol, name: item.name },
+          })
+        }
+      />
+    </Screen>
+  );
+};
 
 export default Watch;

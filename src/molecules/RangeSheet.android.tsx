@@ -11,7 +11,13 @@ import type { RangeSheetProps } from "./rangePickerShared";
 
 // Android: a Material 3 modal bottom sheet with one list item per option.
 // Compose takes colors, not classes, so the tokens are read and passed in.
-const RangeSheet = ({ visible, options, value, onSelect, onClose }: RangeSheetProps) => {
+const RangeSheet = <T extends string>({
+  visible,
+  options,
+  value,
+  onSelect,
+  onClose,
+}: RangeSheetProps<T>) => {
   const { theme } = useUniwind();
   const [card, foreground, primary] = useCSSVariable([
     "--color-card",

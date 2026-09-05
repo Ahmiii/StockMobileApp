@@ -1,5 +1,6 @@
 import RangePicker, {
   PERIOD_LABEL,
+  RANGES,
   rangeDates,
   type Range,
 } from "@/molecules/RangePicker";
@@ -112,7 +113,7 @@ const Portfolio = () => {
         change={{ amount: "Rs 2,745", percent: "+0.48", caption: "today" }}
       />
 
-      <RangePicker value={range} onChange={setRange} />
+      <RangePicker options={RANGES} value={range} onChange={setRange} />
 
       {hasPerformance ? (
         <PerformanceCard

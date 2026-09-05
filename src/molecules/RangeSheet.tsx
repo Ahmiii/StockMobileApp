@@ -8,7 +8,13 @@ import type { RangeSheetProps } from "./rangePickerShared";
 // Web fallback only. iOS renders RangeSheet.ios.tsx (SwiftUI bottom sheet
 // with a List) and Android renders RangeSheet.android.tsx (Material modal
 // bottom sheet); Metro picks by platform.
-const RangeSheet = ({ visible, options, value, onSelect, onClose }: RangeSheetProps) => (
+const RangeSheet = <T extends string>({
+  visible,
+  options,
+  value,
+  onSelect,
+  onClose,
+}: RangeSheetProps<T>) => (
   <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
     <Pressable className="flex-1 justify-end bg-black/50 p-4" onPress={onClose}>
       <Card bordered>

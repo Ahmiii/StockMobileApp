@@ -1,12 +1,8 @@
 import Card from "@/atoms/Card";
-import Divider from "@/atoms/Divider";
 import Pill from "@/atoms/Pill";
-import ProgressBar from "@/atoms/ProgressBar";
 import SectionHeader from "@/molecules/SectionHeader";
-import TrendChart from "@/molecules/TrendChart";
 import { FlashList } from "@shopify/flash-list";
 import { Pressable, Text, View } from "react-native";
-import { useCSSVariable } from "uniwind";
 
 type Tone = "success" | "danger" | "neutral";
 
@@ -17,137 +13,127 @@ const textClass: Record<Tone, string> = {
 };
 
 export type WatchItem = {
-  symbol: string; // "HBL"
-  name: string; // "Habib Bank"
-  price: number; // 245.6
-  /** Day change in percent, e.g. 1.1 or -0.4. */
-  change: number;
-  /** Price target. Progress is price / target. */
-  target: number; // 280
-  /** Recent prices for the sparkline, oldest first. */
-  trend: number[];
+  symbol: string; // "PSO"
+  name: string; // "Pakistan State Oil Company Limited"
+  sector?: string; // "OIL & GAS MARKETING COMPANIES"
+  /** Last price; null until the backend has a quote. */
+  price: number | null;
+  /** Day change in percent, e.g. 0.28 or -0.4; null with no quote. */
+  change: number | null;
+};
+
+export type Benchmark = {
+  name: string; // "KSE-100 Index"
+  price: number;
+  change: number; // percent
 };
 
 type Props = {
   title?: string;
   items: WatchItem[];
+  /** Shown under the title, e.g. the KSE-100 with its day change. */
+  benchmark?: Benchmark;
   onAdd?: () => void;
+  /** Called when a row is tapped, e.g. to open the stock's detail screen. */
+  onPressItem?: (item: WatchItem) => void;
 };
 
-const toneFor = (change: number): Tone => {
+const toneFor = (change: number | null): Tone => {
+  if (change === null) return "neutral";
   if (change > 0) return "success";
   if (change < 0) return "danger";
   return "neutral";
 };
 
+const money = (n: number) =>
+  n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 const formatChange = (change: number) =>
-  `${change > 0 ? "+" : ""}${change.toFixed(1)}%`;
+  `${change > 0 ? "+" : ""}${change.toFixed(2)}%`;
 
 const Separator = () => <View className="h-3" />;
 
 // Fills the screen. The list is the only scroller, so put this inside
 // <Screen scroll={false}> rather than a scrolling Screen.
-const Watchlist = ({ title = "Watchlist", items, onAdd }: Props) => {
-  // Skia's Canvas takes colors, not classes, so read the tokens directly.
-  const [success, danger, muted, primary, secondary] = useCSSVariable([
-    "--color-success",
-    "--color-danger",
-    "--color-muted",
-    "--color-primary",
-    "--color-secondary",
-  ]);
-  const lineColor: Record<Tone, string> = {
-    success: String(success),
-    danger: String(danger),
-    neutral: String(muted),
-  };
-  const barColor = String(primary);
-  const trackColor = String(secondary);
+const Watchlist = ({ title = "Watchlist", items, benchmark, onAdd, onPressItem }: Props) => (
+  <View className="flex-1 gap-3">
+    <SectionHeader
+      title={title}
+      size="lg"
+      color="foreground"
+      right={
+        <Pressable onPress={onAdd}>
+          <Pill tone="primary">
+            <Text className="text-sm font-semibold text-primary">+ Add</Text>
+          </Pill>
+        </Pressable>
+      }
+    />
 
-  return (
-    <View className="flex-1 gap-3">
-      <SectionHeader
-        title={title}
-        size="lg"
-        color="foreground"
-        right={
-          <Pressable onPress={onAdd}>
-            <Pill tone="primary">
-              <Text className="text-sm font-semibold text-primary">+ Add</Text>
-            </Pill>
-          </Pressable>
-        }
-      />
+    {benchmark ? (
+      <View className="flex-row items-center gap-2">
+        <Text className="text-sm text-muted">{benchmark.name}</Text>
+        <Text className="text-sm font-semibold text-foreground">
+          {money(benchmark.price)}
+        </Text>
+        <Text className={`text-sm font-semibold ${textClass[toneFor(benchmark.change)]}`}>
+          {formatChange(benchmark.change)}
+        </Text>
+      </View>
+    ) : null}
 
-      <View className="flex-1">
-        <FlashList
-          data={items}
-          keyExtractor={(item) => item.symbol}
-          renderItem={({ item }) => {
-            const tone = toneFor(item.change);
-            const progress = item.price / item.target;
-            return (
-              <Card bordered className="gap-3">
+    <View className="flex-1">
+      <FlashList
+        data={items}
+        keyExtractor={(item) => item.symbol}
+        renderItem={({ item }) => {
+          const tone = toneFor(item.change);
+          return (
+            <Pressable onPress={() => onPressItem?.(item)}>
+              <Card bordered>
                 <View className="flex-row items-center gap-3">
-                  <View className="w-24">
-                    <Text className="text-lg font-bold text-foreground">
-                      {item.symbol}
-                    </Text>
+                  <View className="flex-1">
+                    <Text className="text-lg font-bold text-foreground">{item.symbol}</Text>
                     <Text className="text-sm text-muted" numberOfLines={1}>
                       {item.name}
                     </Text>
-                  </View>
-
-                  <View className="flex-1">
-                    <TrendChart
-                      height={36}
-                      strokeWidth={1.5}
-                      series={[{ values: item.trend, color: lineColor[tone] }]}
-                    />
+                    {item.sector ? (
+                      <Text className="text-xs text-muted" numberOfLines={1}>
+                        {item.sector}
+                      </Text>
+                    ) : null}
                   </View>
 
                   <View className="items-end">
-                    <Text className="text-lg font-bold text-foreground">
-                      {item.price.toFixed(2)}
-                    </Text>
-                    <Text
-                      className={`text-sm font-semibold ${textClass[tone]}`}
-                    >
-                      {formatChange(item.change)}
-                    </Text>
+                    {item.price !== null ? (
+                      <Text className="text-lg font-bold text-foreground">
+                        {money(item.price)}
+                      </Text>
+                    ) : (
+                      <Text className="text-sm text-muted">No price yet</Text>
+                    )}
+                    {item.change !== null ? (
+                      <Text className={`text-sm font-semibold ${textClass[tone]}`}>
+                        {formatChange(item.change)}
+                      </Text>
+                    ) : null}
                   </View>
-                </View>
 
-                <Divider />
-
-                <View className="flex-row items-center gap-3">
-                  <Text className="w-28 text-sm text-muted">
-                    Target {item.target.toFixed(2)}
-                  </Text>
-                  <View className="flex-1">
-                    <ProgressBar
-                      value={progress}
-                      color={barColor}
-                      trackColor={trackColor}
-                    />
-                  </View>
-                  <Text className="w-12 text-right text-sm font-bold text-primary">
-                    {Math.round(progress * 100)}%
-                  </Text>
+                  <Text className="text-xl text-muted">›</Text>
                 </View>
               </Card>
-            );
-          }}
-          ItemSeparatorComponent={Separator}
-          ListEmptyComponent={
-            <Text className="text-muted">Nothing on your watchlist yet</Text>
-          }
-          contentContainerStyle={{ paddingBottom: 24 }}
-          showsVerticalScrollIndicator={false}
-        />
-      </View>
+            </Pressable>
+          );
+        }}
+        ItemSeparatorComponent={Separator}
+        ListEmptyComponent={
+          <Text className="text-muted">Nothing on your watchlist yet</Text>
+        }
+        contentContainerStyle={{ paddingBottom: 24 }}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
-  );
-};
+  </View>
+);
 
 export default Watchlist;
