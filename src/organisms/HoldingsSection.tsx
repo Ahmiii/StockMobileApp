@@ -2,7 +2,7 @@ import Card from "@/atoms/Card";
 import Label from "@/atoms/Label";
 import TrendChart from "@/molecules/TrendChart";
 import { FlashList } from "@shopify/flash-list";
-import { Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { useCSSVariable } from "uniwind";
 
 type Tone = "success" | "danger" | "neutral";
@@ -10,6 +10,8 @@ type Tone = "success" | "danger" | "neutral";
 type Props = {
   holdings: Holding[];
   height?: number;
+  /** Called when a row is tapped, e.g. to open the stock's detail screen. */
+  onPressItem?: (holding: Holding) => void;
 };
 
 const textClass: Record<Tone, string> = {
@@ -31,7 +33,7 @@ export type Holding = {
 
 const Separator = () => <View className="h-2" />;
 
-const HoldingsSection = ({ holdings, height = 280 }: Props) => {
+const HoldingsSection = ({ holdings, height = 280, onPressItem }: Props) => {
   // Skia's Canvas takes colors, not classes, so read the tokens directly.
   const [success, danger, muted] = useCSSVariable([
     "--color-success",
@@ -54,6 +56,7 @@ const HoldingsSection = ({ holdings, height = 280 }: Props) => {
           renderItem={({ item }) => {
             const tone = item.tone ?? "neutral";
             return (
+              <Pressable onPress={() => onPressItem?.(item)}>
               <Card bordered>
                 <View className="flex-row items-center justify-between">
                   <View className="w-24">
@@ -96,8 +99,7 @@ const HoldingsSection = ({ holdings, height = 280 }: Props) => {
                   </View>
                 </View>
               </Card>
-
-              // <HoldingRow holding={item} lineColor={lineColor[item.tone ?? "neutral"]} />
+              </Pressable>
             );
           }}
           ItemSeparatorComponent={Separator}

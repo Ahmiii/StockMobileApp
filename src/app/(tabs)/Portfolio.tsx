@@ -13,6 +13,7 @@ import PortfolioSummary from "@/organisms/PortfolioSummary";
 import { useIndexPrices } from "@/queries/useMarket";
 import { useHoldings, usePortfolios } from "@/queries/usePortfolios";
 import Screen from "@/templates/Screen";
+import { router } from "expo-router";
 import { useState } from "react";
 
 // 1855.92 -> "1,855.92"
@@ -132,7 +133,15 @@ const Portfolio = () => {
         unrealizedPnl={Math.round(summary?.unrealizedPnl ?? 0)}
       />
 
-      <HoldingsSection holdings={holdings} />
+      <HoldingsSection
+        holdings={holdings}
+        onPressItem={(holding) =>
+          router.push({
+            pathname: "/stock/[symbol]",
+            params: { symbol: holding.symbol, name: holding.name },
+          })
+        }
+      />
     </Screen>
   );
 };
