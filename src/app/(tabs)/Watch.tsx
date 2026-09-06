@@ -1,8 +1,10 @@
 import Skeleton from "@/atoms/Skeleton";
+import AddStockModal from "@/organisms/AddStockModal";
 import Watchlist, { type WatchItem } from "@/organisms/Watchlist";
 import { useWatchlist } from "@/queries/useWatchlist";
 import Screen from "@/templates/Screen";
 import { router } from "expo-router";
+import { useState } from "react";
 import { Text, View } from "react-native";
 
 // Three grey rows while the first result loads. Cheap: no charts, no lists.
@@ -19,6 +21,7 @@ const WatchSkeleton = () => (
 // The list is the screen's scroller, so the Screen itself must not scroll.
 const Watch = () => {
   const { data, isPending, error } = useWatchlist();
+  const [adding, setAdding] = useState(false);
 
   if (isPending) {
     return (
@@ -57,6 +60,7 @@ const Watch = () => {
       <Watchlist
         items={items}
         benchmark={benchmark}
+        onAdd={() => setAdding(true)}
         onPressItem={(item) =>
           router.push({
             pathname: "/stock/[symbol]",
@@ -64,6 +68,8 @@ const Watch = () => {
           })
         }
       />
+
+      <AddStockModal visible={adding} onClose={() => setAdding(false)} />
     </Screen>
   );
 };

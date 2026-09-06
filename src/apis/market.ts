@@ -47,4 +47,20 @@ const getStockTrend = async (symbol: string, period: TrendPeriod) => {
   return trend;
 };
 
-export { getIndexPrices, getStockTrend };
+// GET /market/securities?q=pso
+export type Security = {
+  id: string;
+  symbol: string;
+  companyName: string;
+  sector: string | null;
+};
+
+const searchSecurities = async (query: string) => {
+  const response = await client.get(
+    `/market/securities?q=${encodeURIComponent(query)}`,
+  );
+  const securities: Security[] = response.data.data?.securities ?? [];
+  return securities;
+};
+
+export { getIndexPrices, getStockTrend, searchSecurities };

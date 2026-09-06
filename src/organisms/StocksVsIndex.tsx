@@ -41,7 +41,6 @@ const StocksVsIndex = ({
   const [primary, muted] = useCSSVariable(["--color-primary", "--color-muted"]);
   const stockColor = String(primary);
   const indexColor = String(muted);
-  console.log({ stocks });
   return (
     <View className="gap-2">
       <SectionHeader

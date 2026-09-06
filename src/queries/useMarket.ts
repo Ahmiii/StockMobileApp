@@ -1,5 +1,20 @@
-import { getIndexPrices, getStockTrend, type TrendPeriod } from "@/apis/market";
+import {
+  getIndexPrices,
+  getStockTrend,
+  searchSecurities,
+  type TrendPeriod,
+} from "@/apis/market";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
+
+// Symbol / company search for the "add to watchlist" modal. Only runs from
+// two characters, and keeps the previous results on screen while typing.
+export const useSecuritySearch = (query: string) =>
+  useQuery({
+    queryKey: ["securities", query],
+    queryFn: () => searchSecurities(query),
+    placeholderData: keepPreviousData,
+    enabled: query.length >= 2,
+  });
 
 // Stock vs KSE-100 over a period. keepPreviousData holds the last chart on
 // screen while a newly picked period loads.

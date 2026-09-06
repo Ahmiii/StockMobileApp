@@ -24,4 +24,9 @@ const getWatchlist = async () => {
   return data;
 };
 
-export { getWatchlist };
+// POST /watchlist/:securityId
+const addToWatchlist = async (securityId: string) => {
+  await client.post(`/watchlist/${securityId}`);
+};
+
+export { addToWatchlist, getWatchlist };
