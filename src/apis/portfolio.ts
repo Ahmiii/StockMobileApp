@@ -40,6 +40,10 @@ export type Position = {
   avgCost: number;
   lastPrice: number;
   priceAsOf: string;
+  previousClose: number | null; // the close before the latest one
+  previousCloseDate: string | null; // its date, e.g. Friday on a Monday
+  dayChange: number | null; // Rs, quantity × (lastPrice − previousClose); null when stale
+  dayChangePct: number | null;
   investedValue: number;
   marketValue: number;
   unrealizedPnl: number;
@@ -53,6 +57,11 @@ export type HoldingsSummary = {
   marketValue: number;
   unrealizedPnl: number;
   unrealizedPct: number;
+  dayChange: number | null; // Rs, across holdings priced on dayChangeAsOf
+  dayChangePct: number | null;
+  dayChangeAsOf: string | null; // the trading day the change belongs to
+  dayChangeFrom: string | null; // the trading day it is measured from
+  dayChangeCoverage: number | null; // % of market value that has a price for that day
   realizedPnl: number;
   openPositions: number;
   pricedPositions: number;
@@ -111,10 +120,11 @@ const getTrades = async (portfolioId: string, offset: number, limit = 50) => {
 // GET /portfolio/:id/benchmark — the whole history since the first trade.
 export type BenchmarkPoint = {
   date: string;
-  portfolio: number; // time-weighted, 100 at the first trade
-  benchmark: number; // KSE-100 rebased the same way
+  portfolio: number; // time-weighted, 100 at the first trade, dividends included
+  benchmark: number; // KSE-100 rebased the same way, credited with index dividends
   value: number; // holdings worth that day, in Rs
   netCashIn: number; // buys − sells so far, in Rs
+  dividends: number; // dividends received so far, in Rs
 };
 
 export type BenchmarkPosition = {
@@ -122,8 +132,9 @@ export type BenchmarkPosition = {
   quantity: number;
   avgCost: number;
   lastPrice: number;
+  dividendsPerShare: number; // received since buyDate, in today's share units
   buyDate: string; // cost-weighted, moved to the next trading day
-  stockReturn: number;
+  stockReturn: number; // price change plus dividends, on avgCost
   benchmarkReturn: number; // KSE-100 over the same window
   alpha: number; // stockReturn − benchmarkReturn
   costBasis: number;
@@ -136,8 +147,10 @@ export type Benchmark = {
   headline: {
     netCashIn: number;
     portfolio: number; // what the holdings are worth today
+    dividends: number; // dividends received over the whole history
+    portfolioWithDividends: number; // holdings + dividends kept as cash
     benchmark: number; // what the same cash in KSE-100 would be worth
-    difference: number;
+    difference: number; // portfolioWithDividends − benchmark
     portfolioReturnOnCash: number;
     benchmarkReturnOnCash: number;
   };
@@ -165,5 +178,49 @@ const getBenchmark = async (portfolioId: string) => {
   return benchmark;
 };
 
-export { getBenchmark, getHoldings, getPortfolios, getTrades };
+// GET /portfolio/:id/income — dividend income worked out from trades and the
+// recorded dividends. Rupees; `net` is after withholding tax (`taxRate`).
+export type Money = { gross: number; net: number };
+
+export type UpcomingDividend = {
+  symbol: string;
+  exDate: string;
+  buyBefore: string; // last weekday before the ex-date
+  amount: number; // Rs per share
+  held: boolean; // false for a watchlist-only stock
+  shares: number;
+  expected: Money | null;
+};
+
+export type IncomeHolding = {
+  symbol: string;
+  shares: number;
+  avgCost: number;
+  lastPrice: number | null;
+  trailingDps: number; // dividend per share, last 12 months
+  projected: number; // shares × trailingDps
+  yieldOnCost: number | null; // percent
+  currentYield: number | null; // percent
+  thisYear: number; // gross, this fiscal year
+  nextExDate: string | null;
+};
+
+export type Income = {
+  thisYear: Money & { fiscalYear: number; dividends: number };
+  lastTwelveMonths: Money & { dividends: number };
+  projected: Money & { yieldOnCost: number | null; currentYield: number | null };
+  byYear: (Money & { fiscalYear: number })[];
+  upcoming: UpcomingDividend[];
+  holdings: IncomeHolding[];
+  entitled: { symbol: string; exDate: string; amount: number; shares: number; gross: number; net: number }[];
+  taxRate: number;
+};
+
+const getIncome = async (portfolioId: string) => {
+  const response = await client.get(`/portfolio/${portfolioId}/income`);
+  const income: Income = response.data.data;
+  return income;
+};
+
+export { getBenchmark, getHoldings, getIncome, getPortfolios, getTrades };
 

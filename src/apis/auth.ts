@@ -35,10 +35,17 @@ const linkBrokerAccount = async (body: BrokerAccountRequest) => {
   return response.data.data;
 };
 
+export type BrokerAccount = {
+  id: string;
+  clientCode: string;
+  syncStatus: "idle" | "syncing" | "error" | "disconnected";
+  lastSyncedAt: string | null; // ISO timestamp of the last successful sync
+};
+
 // GET /broker/accounts — the broker accounts already linked to this user.
 const getBrokerAccounts = async () => {
   const response = await client.get("/broker/accounts");
-  const accounts: { id: string; clientCode: string }[] = response.data.data.accounts;
+  const accounts: BrokerAccount[] = response.data.data.accounts;
   return accounts;
 };
 

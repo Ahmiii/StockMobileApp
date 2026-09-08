@@ -5,7 +5,7 @@ import RangePicker, { type RangeOption } from "@/molecules/RangePicker";
 import PerformanceCard from "@/organisms/PerformanceCard";
 import StockStats, { type Stat } from "@/organisms/StockStats";
 import StockSummaryCard from "@/organisms/StockSummaryCard";
-import { useStockTrend } from "@/queries/useMarket";
+import { useCorporateActions, useStockTrend } from "@/queries/useMarket";
 import Screen from "@/templates/Screen";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
@@ -43,6 +43,17 @@ const toneOf = (n: number) => {
   return "neutral" as const;
 };
 
+// "2025-06-02" -> "2 Jun 2025"
+const longDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+
+// "2 for 1" for a split, "10% bonus" for a bonus issue.
+const describeRatio = (type: string, ratio: number | null) => {
+  if (ratio === null) return "";
+  if (type === "BONUS") return `${Math.round((ratio - 1) * 100)}% bonus`;
+  return `${ratio} for 1`;
+};
+
 const DetailSkeleton = () => (
   <View className="gap-4">
     <Skeleton className="h-24 w-full rounded-2xl" />
@@ -55,6 +66,31 @@ const StockDetail = () => {
   const { symbol = "", name } = useLocalSearchParams<{ symbol: string; name?: string }>();
   const [period, setPeriod] = useState<TrendPeriod>("6M");
   const { data, isPending, error } = useStockTrend(symbol, period);
+  const { data: actions } = useCorporateActions(symbol);
+
+  // Dividends and share-count events, as a small stats grid.
+  const today = new Date().toISOString().slice(0, 10);
+  const dividends = (actions ?? []).filter((a) => a.type === "DIVIDEND");
+  const nextDividend = [...dividends].reverse().find((a) => a.exDate >= today);
+  const yearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const trailingDps = dividends
+    .filter((a) => a.exDate > yearAgo && a.exDate <= today)
+    .reduce((sum, a) => sum + (a.amount ?? 0), 0);
+  const lastShareEvent = (actions ?? []).find((a) => a.type === "SPLIT" || a.type === "BONUS");
+  const actionStats: Stat[] = [
+    {
+      label: "Next dividend",
+      value: nextDividend ? `Rs ${nextDividend.amount} · ex ${longDate(nextDividend.exDate)}` : "none announced",
+    },
+    { label: "Paid last 12 months", value: `Rs ${trailingDps.toFixed(2)}/share` },
+    {
+      label: "Last split / bonus",
+      value: lastShareEvent
+        ? `${describeRatio(lastShareEvent.type, lastShareEvent.ratio)} · ${longDate(lastShareEvent.exDate)}`
+        : "none on record",
+    },
+    { label: "Dividends on record", value: String(dividends.length) },
+  ];
 
   let body = null;
 
@@ -116,6 +152,8 @@ const StockDetail = () => {
         />
 
         <StockStats stats={stats} />
+
+        {actions ? <StockStats title="DIVIDENDS & ACTIONS" stats={actionStats} /> : null}
       </>
     );
   } else {

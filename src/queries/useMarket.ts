@@ -1,4 +1,5 @@
 import {
+  getCorporateActions,
   getIndexPrices,
   getStockTrend,
   searchSecurities,
@@ -24,6 +25,15 @@ export const useStockTrend = (symbol: string, period: TrendPeriod) =>
     queryFn: () => getStockTrend(symbol, period),
     placeholderData: keepPreviousData,
     enabled: symbol !== "",
+  });
+
+// Dividends, bonus and splits for one stock; changes only after a sync.
+export const useCorporateActions = (symbol: string) =>
+  useQuery({
+    queryKey: ["corporateActions", symbol],
+    queryFn: () => getCorporateActions(symbol),
+    enabled: symbol !== "",
+    staleTime: 60 * 60 * 1000,
   });
 
 // from/to are part of the cache key, so the same window is fetched once.

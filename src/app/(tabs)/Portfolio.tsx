@@ -1,3 +1,4 @@
+import type { BrokerAccount } from "@/apis/auth";
 import type { Position } from "@/apis/portfolio";
 import RangePicker, {
   PERIOD_LABEL,
@@ -6,12 +7,19 @@ import RangePicker, {
   type Range,
 } from "@/molecules/RangePicker";
 import HoldingsSection, { type Holding } from "@/organisms/HoldingsSection";
+import IncomeCard from "@/organisms/IncomeCard";
 import InvestPnL from "@/organisms/Invest&PnL";
 import PerformanceCard from "@/organisms/PerformanceCard";
 import PortfolioHeader from "@/organisms/PortfolioHeader";
 import PortfolioSkeleton from "@/organisms/PortfolioSkeleton";
 import PortfolioSummary from "@/organisms/PortfolioSummary";
-import { useBenchmark, useHoldings, usePortfolioId } from "@/queries/usePortfolios";
+import { useBrokerAccounts } from "@/queries/useBrokerAccounts";
+import {
+  useBenchmark,
+  useHoldings,
+  useIncome,
+  usePortfolioId,
+} from "@/queries/usePortfolios";
 import Screen from "@/templates/Screen";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -57,6 +65,21 @@ const staleLabel = (priceAsOf: string | null) => {
   return age > ONE_WEEK_MS ? `price from ${formatDate(priceAsOf)}` : undefined;
 };
 
+// "Synced 8 Sep, 17:32", or why there is nothing to show.
+const syncLabelFor = (account?: BrokerAccount) => {
+  if (!account) return "No broker linked";
+  if (account.syncStatus === "syncing") return "Syncing…";
+  if (account.syncStatus === "error") return "Last sync failed";
+  if (!account.lastSyncedAt) return "Not synced yet";
+  const at = new Date(account.lastSyncedAt).toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `Synced ${at}`;
+};
+
 // One row of the holdings list.
 const toHolding = (position: Position): Holding => {
   const closes = [...position.trend]
@@ -81,11 +104,15 @@ const toHolding = (position: Position): Holding => {
 
 const Portfolio = () => {
   const [range, setRange] = useState<Range>("1Y");
+  const [showing, setShowing] = useState<"today" | "sinceBought">("today");
   const portfolioId = usePortfolioId();
+  const { data: brokerAccounts } = useBrokerAccounts();
+  const syncLabel = syncLabelFor(brokerAccounts?.[0]);
 
   // 1. Portfolio vs KSE100 for the whole history. Both lines start at 100 on
   //    the first trade, and money added never moves the portfolio line.
   const { data: benchmark } = useBenchmark(portfolioId);
+  const { data: income } = useIncome(portfolioId);
   const firstTradeDate = benchmark?.window.from;
 
   // 2. Range chips. A chip that starts before the first trade would draw the
@@ -96,7 +123,9 @@ const Portfolio = () => {
       !firstTradeDate ||
       rangeDates(chip.value).from >= firstTradeDate,
   );
-  const activeRange = chips.some((chip) => chip.value === range) ? range : "All";
+  const activeRange = chips.some((chip) => chip.value === range)
+    ? range
+    : "All";
   const dates = rangeDates(activeRange, firstTradeDate);
 
   // 3. Holdings for that range (the sparklines use the range's bars).
@@ -108,16 +137,19 @@ const Portfolio = () => {
 
   // 4. Chart: the part of the history inside the range, rebased to 100 on
   //    the range's first day so it reads as "return over this range".
-  const points = (benchmark?.series ?? []).filter((point) => point.date >= dates.from);
+  const points = (benchmark?.series ?? []).filter(
+    (point) => point.date >= dates.from,
+  );
   const portfolioLine = rebase(points.map((point) => point.portfolio));
   const indexLine = rebase(points.map((point) => point.benchmark));
-  const portfolioChange = (portfolioLine[portfolioLine.length - 1] ?? 100) - 100;
+  const portfolioChange =
+    (portfolioLine[portfolioLine.length - 1] ?? 100) - 100;
   const indexChange = (indexLine[indexLine.length - 1] ?? 100) - 100;
 
   if (isPending) {
     return (
       <Screen>
-        <PortfolioHeader syncLabel="Sync now" />
+        <PortfolioHeader syncLabel={syncLabel} />
         <PortfolioSkeleton />
       </Screen>
     );
@@ -125,18 +157,72 @@ const Portfolio = () => {
 
   const unrealized = summary?.unrealizedPnl ?? 0;
 
+  // "+Rs 6,810" or "-Rs 6,810"
+  const rupeesWithSign = (amount: number) =>
+    `${amount < 0 ? "-" : "+"}Rs ${formatMoney(Math.abs(amount))}`;
+
+  // Two ways to read the change: today against yesterday, or since you bought
+  // what you hold. The badge shows one, the line under it shows the other, and
+  // a tap on the badge swaps them. Without a fresh price there is no "today".
+  const hasToday =
+    summary?.dayChange != null && Boolean(summary?.dayChangeAsOf);
+  // "Today vs previous day Sep 4, 2026". Names both days, so a Monday never
+  // says "yesterday", and says the price date instead of "Today" when the
+  // latest price is older than today. Adds a note when some holdings lack it.
+  const usDate = (iso: string) =>
+    new Date(iso).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const asOfLabel =
+    summary?.dayChangeAsOf === todayIso
+      ? "Portfolio today"
+      : usDate(summary?.dayChangeAsOf ?? todayIso);
+  const comparedWith = summary?.dayChangeFrom
+    ? `${asOfLabel} vs previous day ${usDate(summary.dayChangeFrom)} change`
+    : `${asOfLabel} vs previous close`;
+  const todayLabel = hasToday
+    ? summary.dayChangeCoverage !== null && summary.dayChangeCoverage < 95
+      ? `${comparedWith} · ${Math.round(summary.dayChangeCoverage)}% of holdings`
+      : comparedWith
+    : "";
+  const today = hasToday
+    ? {
+        amount: rupeesWithSign(summary.dayChange!),
+        percent: formatPercent(summary.dayChangePct ?? 0),
+        caption: todayLabel,
+        tone: toneOf(summary.dayChange!),
+      }
+    : null;
+  const sinceBought = {
+    amount: rupeesWithSign(unrealized),
+    percent: formatPercent(summary?.unrealizedPct ?? 0),
+    caption: "since you bought",
+    tone: toneOf(unrealized),
+  };
+  const badge = showing === "today" && today ? today : sinceBought;
+  const otherLine =
+    showing === "today" && today
+      ? `${sinceBought.amount} · ${sinceBought.percent} since you bought`
+      : today
+        ? `${today.amount} · ${today.percent} ${todayLabel}`
+        : undefined;
+
   return (
     <Screen>
-      <PortfolioHeader syncLabel="Sync now" />
+      <PortfolioHeader syncLabel={syncLabel} />
 
       <PortfolioSummary
         value={`Rs ${formatMoney(summary?.marketValue ?? 0, 2)}`}
-        change={{
-          amount: `${unrealized < 0 ? "-" : "+"}Rs ${formatMoney(Math.abs(unrealized))}`,
-          percent: formatPercent(summary?.unrealizedPct ?? 0),
-          caption: "unrealised",
-          tone: toneOf(unrealized),
-        }}
+        change={badge}
+        secondary={otherLine}
+        onPressChange={
+          today
+            ? () => setShowing(showing === "today" ? "sinceBought" : "today")
+            : undefined
+        }
       />
 
       <RangePicker options={chips} value={activeRange} onChange={setRange} />
@@ -157,6 +243,8 @@ const Portfolio = () => {
         invested={Math.round(summary?.invested ?? 0)}
         unrealizedPnl={Math.round(unrealized)}
       />
+
+      {income ? <IncomeCard income={income} /> : null}
 
       <HoldingsSection
         holdings={holdings}

@@ -63,4 +63,20 @@ const searchSecurities = async (query: string) => {
   return securities;
 };
 
-export { getIndexPrices, getStockTrend, searchSecurities };
+// GET /market/corporate-actions/PSO — dividends, bonus, splits, newest first.
+export type CorporateAction = {
+  type: "DIVIDEND" | "BONUS" | "RIGHTS" | "SPLIT" | "MERGER";
+  exDate: string;
+  ratio: number | null; // new shares per old (bonus, split, merger)
+  amount: number | null; // Rs per share (dividend) or rights price
+  toSymbol: string | null;
+  source: string;
+};
+
+const getCorporateActions = async (symbol: string) => {
+  const response = await client.get(`/market/corporate-actions/${symbol}`);
+  const actions: CorporateAction[] = response.data.data.actions;
+  return actions;
+};
+
+export { getCorporateActions, getIndexPrices, getStockTrend, searchSecurities };
