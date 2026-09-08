@@ -2,6 +2,7 @@ import Button from "@/atoms/Button";
 import Label from "@/atoms/Label";
 import LogoMark from "@/atoms/LogoMark";
 import TextField from "@/atoms/TextField";
+import { routeAfterLogin } from "@/apis/auth";
 import { useLogin } from "@/queries/useLogin";
 import { router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
@@ -22,7 +23,8 @@ const Welcome = () => {
   const loginMutation = useLogin();
   const signIn = (values: Form) => {
     loginMutation.mutate(values, {
-      onSuccess: () => router.replace("/link-broker"),
+      // Straight to the tabs when a broker is already linked.
+      onSuccess: async () => router.replace(await routeAfterLogin()),
     });
   };
 

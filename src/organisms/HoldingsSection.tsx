@@ -29,6 +29,7 @@ export type Holding = {
   price?: string; // "56.24", last traded price
   tone?: Tone;
   trend?: number[];
+  stale?: string; // "price from 3 Jan 2025" — shown instead of the sparkline
 };
 
 const Separator = () => <View className="h-2" />;
@@ -78,6 +79,12 @@ const HoldingsSection = ({ holdings, height = 280, onPressItem }: Props) => {
                           { values: item.trend, color: lineColor[tone] },
                         ]}
                       />
+                    </View>
+                  ) : item.stale ? (
+                    <View className="flex-1 px-4">
+                      <Text className="text-xs text-muted" numberOfLines={2}>
+                        {item.stale}
+                      </Text>
                     </View>
                   ) : null}
 

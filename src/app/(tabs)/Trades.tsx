@@ -1,5 +1,5 @@
 import TradeHistory, { type Trade } from "@/organisms/TradeHistory";
-import { usePortfolios, useTrades } from "@/queries/usePortfolios";
+import { usePortfolioId, useTrades } from "@/queries/usePortfolios";
 import Screen from "@/templates/Screen";
 
 // "2026-08-21T00:00:00.000Z" -> "21 Aug 2026"
@@ -11,9 +11,8 @@ const shortDate = (iso: string) =>
   });
 
 const Trades = () => {
-  const { data: portfolios } = usePortfolios();
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useTrades(
-    portfolios?.[1]?.id ?? "",
+    usePortfolioId(),
   );
 
   // Flatten the pages into one list, mapped to what TradeHistory renders.

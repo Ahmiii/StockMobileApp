@@ -1,19 +1,9 @@
+import { rangeDates } from "@/molecules/RangePicker";
 import MarketIndexCard from "@/organisms/MarketIndexCard";
-import SectorsToday, { type Sector } from "@/organisms/SectorsToday";
 import StocksVsIndex, { type StockComparison } from "@/organisms/StocksVsIndex";
 import { useIndexPrices } from "@/queries/useMarket";
-import { useHoldings, usePortfolios } from "@/queries/usePortfolios";
+import { useHoldings, usePortfolioId } from "@/queries/usePortfolios";
 import Screen from "@/templates/Screen";
-
-// Placeholder until there is a sectors endpoint.
-const SECTORS: Sector[] = [
-  { name: "Banking", change: 1.2 },
-  { name: "E&P", change: 1.0 },
-  { name: "Cement", change: 0.8 },
-  { name: "Fertilizer", change: 0.3 },
-  { name: "Power", change: -0.4 },
-  { name: "Technology", change: -0.7 },
-];
 
 // 147832.64 -> "147,832.64"
 const money = (n: number, decimals = 0) =>
@@ -39,15 +29,16 @@ const rebase = (values: number[]) => {
 };
 
 const Market = () => {
-  const { data: bars } = useIndexPrices("KSE100");
-  const { data: portfolios } = usePortfolios();
-  const { data: holdings } = useHoldings(portfolios?.[1]?.id ?? "");
+  // One month for both, so the sparklines and the index card share a window.
+  const dates = rangeDates("1M");
+  const { data: bars } = useIndexPrices("KSE100", dates.from, dates.to);
+  const { data: holdings } = useHoldings(usePortfolioId(), dates);
 
+  // Held, and priced in this window — a stock with no recent bars has nothing to compare.
   const openPositions = (holdings?.positions ?? []).filter(
-    (position) => position.quantity > 0,
+    (position) => position.quantity > 0 && position.trend.length > 1,
   );
 
-  // The index over the same window as the holdings' trends (30 trading days).
   const days = openPositions[0]?.trend.length || 30;
   const recentBars = (bars ?? []).slice(-days);
   const indexCloses = recentBars.map((bar) => bar.close);
@@ -98,8 +89,6 @@ const Market = () => {
       ) : null}
 
       <StocksVsIndex stocks={stocks} />
-
-      <SectorsToday sectors={SECTORS} />
     </Screen>
   );
 };

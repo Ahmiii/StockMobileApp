@@ -1,5 +1,5 @@
 import PortfolioList from "@/organisms/PortfolioList";
-import { usePortfolios } from "@/queries/usePortfolios";
+import { selectPortfolio, usePortfolios } from "@/queries/usePortfolios";
 import { router } from "expo-router";
 
 const Portfolios = () => {
@@ -10,7 +10,10 @@ const Portfolios = () => {
       portfolios={data ?? []}
       isPending={isPending}
       error={error}
-      onSelect={() => router.replace("/Portfolio")}
+      onSelect={(portfolio) => {
+        selectPortfolio(portfolio.id);
+        router.replace("/Portfolio");
+      }}
     />
   );
 };

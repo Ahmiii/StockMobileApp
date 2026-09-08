@@ -20,9 +20,13 @@ type Props = {
   comparison: string; // "+11.8% vs KSE-100"
 };
 
-// "2026-08-04" -> "4 Aug"
+// "2026-08-04" -> "4 Aug 2026"
 const shortDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  new Date(iso).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 
 // Rebased value -> change since the first point, e.g. 102.13 -> "+2.13%".
 const asChange = (value: number) => {

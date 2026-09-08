@@ -37,7 +37,9 @@ export const useAddStock = (onClose: () => void) => {
   };
 
   const searched = debouncedQuery.length >= 2;
-  const results = search.data ?? [];
+  // The search keeps its last results while a new query loads, so an empty
+  // box would still show the old list. Clear it when there is nothing to search.
+  const results = searched ? (search.data ?? []) : [];
 
   // One line of feedback under the search box, or nothing when there are results.
   let status = "";

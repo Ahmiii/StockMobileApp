@@ -4,6 +4,7 @@ export type Portfolio = {
   id: string;
   name: string;
   subtitle?: string;
+  linked: boolean; // has a broker account behind it
 };
 
 type PortfolioItem = {
@@ -25,6 +26,7 @@ const getPortfolios = async (): Promise<Portfolio[]> => {
     subtitle: item.brokerAccountId
       ? `${item.baseCurrency} · Linked to broker`
       : `${item.baseCurrency} · Not linked`,
+    linked: item.brokerAccountId !== null,
   }));
 };
 
@@ -106,5 +108,62 @@ const getTrades = async (portfolioId: string, offset: number, limit = 50) => {
   return page;
 };
 
-export { getHoldings, getPortfolios, getTrades };
+// GET /portfolio/:id/benchmark — the whole history since the first trade.
+export type BenchmarkPoint = {
+  date: string;
+  portfolio: number; // time-weighted, 100 at the first trade
+  benchmark: number; // KSE-100 rebased the same way
+  value: number; // holdings worth that day, in Rs
+  netCashIn: number; // buys − sells so far, in Rs
+};
+
+export type BenchmarkPosition = {
+  symbol: string;
+  quantity: number;
+  avgCost: number;
+  lastPrice: number;
+  buyDate: string; // cost-weighted, moved to the next trading day
+  stockReturn: number;
+  benchmarkReturn: number; // KSE-100 over the same window
+  alpha: number; // stockReturn − benchmarkReturn
+  costBasis: number;
+  weight: number; // % of total cost
+};
+
+export type Benchmark = {
+  asOf: string;
+  window: { from: string; to: string; tradingDays: number };
+  headline: {
+    netCashIn: number;
+    portfolio: number; // what the holdings are worth today
+    benchmark: number; // what the same cash in KSE-100 would be worth
+    difference: number;
+    portfolioReturnOnCash: number;
+    benchmarkReturnOnCash: number;
+  };
+  timeWeighted: {
+    portfolio: number;
+    benchmark: number;
+    alpha: number;
+    maxDrawdown: { portfolio: number; benchmark: number };
+  };
+  moneyWeighted: { portfolioXirr: number; benchmarkXirr: number };
+  phases: {
+    from: string;
+    to: string;
+    portfolio: number;
+    benchmark: number;
+    netCashInAtEnd: number;
+  }[];
+  series: BenchmarkPoint[];
+  positions: BenchmarkPosition[];
+};
+
+const getBenchmark = async (portfolioId: string) => {
+  const response = await client.get(`/portfolio/${portfolioId}/benchmark`);
+  const benchmark: Benchmark = response.data.data;
+  return benchmark;
+};
+
+export { getBenchmark, getHoldings, getPortfolios, getTrades };
 

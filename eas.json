@@ -9,7 +9,10 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_BASE_URL": "http://192.168.100.69:5001"
+      }
     },
     "production": {
       "autoIncrement": true
