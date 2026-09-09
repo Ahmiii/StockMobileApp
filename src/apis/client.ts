@@ -1,5 +1,4 @@
 import axios from "axios";
-import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 
 const baseURL = process.env.EXPO_PUBLIC_BASE_URL;
@@ -33,6 +32,28 @@ export const loadAuthToken = async () => {
   return authToken;
 };
 
+// ---- session expiry -------------------------------------------------------
+// The API layer knows nothing about screens or caches, so when the backend
+// rejects a token it just announces it. The root layout listens and does the
+// app-side work: clear cached data and go back to sign-in.
+
+type Listener = () => void;
+const sessionExpiredListeners = new Set<Listener>();
+
+export const onSessionExpired = (listener: Listener) => {
+  sessionExpiredListeners.add(listener);
+  return () => {
+    sessionExpiredListeners.delete(listener);
+  };
+};
+
+// Several requests can fail with 401 at once; only the first one matters.
+const sessionExpired = () => {
+  if (!authToken) return;
+  setAuthToken(null);
+  sessionExpiredListeners.forEach((listener) => listener());
+};
+
 client.interceptors.request.use((config) => {
   if (authToken) {
     config.headers.Authorization = `Bearer ${authToken}`;
@@ -46,9 +67,8 @@ client.interceptors.response.use(
     if (axios.isAxiosError(error)) {
       // A rejected token means sign in again. A failed sign-in (no token yet)
       // just shows its message.
-      if (error.response?.status === 401 && authToken) {
-        setAuthToken(null);
-        router.replace("/welcome");
+      if (error.response?.status === 401) {
+        sessionExpired();
       }
       const data = error.response?.data;
       const message =

@@ -4,7 +4,7 @@ import LogoMark from "@/atoms/LogoMark";
 import TextField from "@/atoms/TextField";
 import { routeAfterLogin } from "@/apis/auth";
 import { useLogin } from "@/queries/useLogin";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { KeyboardAvoidingView, Platform, Text, View } from "react-native";
 
@@ -16,6 +16,10 @@ type Form = {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const Welcome = () => {
+  // Set by the root layout when the backend rejected a saved token.
+  const { reason } = useLocalSearchParams<{ reason?: string }>();
+  const sessionExpired = reason === "expired";
+
   const { control, handleSubmit } = useForm<Form>({
     defaultValues: { email: "", password: "" },
     mode: "onBlur",
@@ -44,6 +48,14 @@ const Welcome = () => {
             Your PSX portfolio, always current.
           </Text>
         </View>
+
+        {sessionExpired ? (
+          <View className="rounded-2xl bg-primary-soft p-4">
+            <Text className="text-base text-muted">
+              Your session expired. Sign in again to continue.
+            </Text>
+          </View>
+        ) : null}
 
         <View className="gap-3">
           <Controller

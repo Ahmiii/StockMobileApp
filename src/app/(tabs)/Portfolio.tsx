@@ -181,7 +181,7 @@ const Portfolio = () => {
       ? "Portfolio today"
       : usDate(summary?.dayChangeAsOf ?? todayIso);
   const comparedWith = summary?.dayChangeFrom
-    ? `${asOfLabel} vs previous day ${usDate(summary.dayChangeFrom)} change`
+    ? `${asOfLabel} vs previous day ${usDate(summary.dayChangeFrom)} change `
     : `${asOfLabel} vs previous close`;
   const todayLabel = hasToday
     ? summary.dayChangeCoverage !== null && summary.dayChangeCoverage < 95
