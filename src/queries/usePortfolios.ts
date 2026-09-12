@@ -1,12 +1,17 @@
 import {
   getBenchmark,
+  getDividends,
   getHoldings,
   getIncome,
   getPortfolios,
   getTrades,
   type DateRange,
 } from "@/apis/portfolio";
-import { keepPreviousData, useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQuery,
+} from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
 
 export const usePortfolios = () =>
@@ -85,3 +90,10 @@ export const useTrades = (portfolioId: string) =>
     },
     enabled: portfolioId !== "",
   });
+
+export const useDividends = (portfolioId: string) => {
+  useQuery({
+    queryKey: ["dividends", portfolioId],
+    queryFn: () => getDividends(portfolioId),
+  });
+};

@@ -4,7 +4,6 @@ import TrendChart from "@/molecules/TrendChart";
 import { FlashList } from "@shopify/flash-list";
 import { Pressable, Text, View } from "react-native";
 import { useCSSVariable } from "uniwind";
-
 type Tone = "success" | "danger" | "neutral";
 
 type Props = {
@@ -49,7 +48,12 @@ const HoldingsSection = ({ holdings, height = 280, onPressItem }: Props) => {
 
   return (
     <View className="gap-2">
-      <Label>Holdings</Label>
+      <View className="flex-row items-center justify-between">
+        <Label>Holdings</Label>
+        {/* <Link href="/expandHoldings">
+          <Label>Open modal</Label>
+        </Link> */}
+      </View>
       <View style={{ height }}>
         <FlashList
           data={holdings}
@@ -58,54 +62,56 @@ const HoldingsSection = ({ holdings, height = 280, onPressItem }: Props) => {
             const tone = item.tone ?? "neutral";
             return (
               <Pressable onPress={() => onPressItem?.(item)}>
-              <Card bordered>
-                <View className="flex-row items-center justify-between">
-                  <View className="w-24">
-                    <Text className="font-semibold text-foreground">
-                      {item.symbol}
-                    </Text>
-                    {item.detail ? (
-                      <Text className="text-xs text-muted" numberOfLines={1}>
-                        {item.detail}
+                <Card bordered>
+                  <View className="flex-row items-center justify-between">
+                    <View className="w-24">
+                      <Text className="font-semibold text-foreground">
+                        {item.symbol}
                       </Text>
-                    ) : null}
-                  </View>
-                  {item.trend ? (
-                    <View className="flex-1 px-4">
-                      <TrendChart
-                        height={28}
-                        strokeWidth={1.5}
-                        series={[
-                          { values: item.trend, color: lineColor[tone] },
-                        ]}
-                      />
-                    </View>
-                  ) : item.stale ? (
-                    <View className="flex-1 px-4">
-                      <Text className="text-xs text-muted" numberOfLines={2}>
-                        {item.stale}
-                      </Text>
-                    </View>
-                  ) : null}
-
-                  <View className="items-end">
-                    <Text className="font-semibold text-foreground">
-                      {item.value}
-                    </Text>
-                    {/* Last price in muted, then the change in its tone color. */}
-                    <View className="flex-row items-center gap-1.5">
-                      {item.price ? (
-                        <Text className="text-xs text-muted">{item.price}</Text>
+                      {item.detail ? (
+                        <Text className="text-xs text-muted" numberOfLines={1}>
+                          {item.detail}
+                        </Text>
                       ) : null}
-                      <Text
-                        className={`text-xs font-semibold ${textClass[tone]}`}
-                      >
-                        {item.change}
+                    </View>
+                    {item.trend ? (
+                      <View className="flex-1 px-4">
+                        <TrendChart
+                          height={28}
+                          strokeWidth={1.5}
+                          series={[
+                            { values: item.trend, color: lineColor[tone] },
+                          ]}
+                        />
+                      </View>
+                    ) : item.stale ? (
+                      <View className="flex-1 px-4">
+                        <Text className="text-xs text-muted" numberOfLines={2}>
+                          {item.stale}
+                        </Text>
+                      </View>
+                    ) : null}
+
+                    <View className="items-end">
+                      <Text className="font-semibold text-foreground">
+                        {item.value}
                       </Text>
+                      {/* Last price in muted, then the change in its tone color. */}
+                      <View className="flex-row items-center gap-1.5">
+                        {item.price ? (
+                          <Text className="text-xs text-muted">
+                            {item.price}
+                          </Text>
+                        ) : null}
+                        <Text
+                          className={`text-xs font-semibold ${textClass[tone]}`}
+                        >
+                          {item.change}
+                        </Text>
+                      </View>
                     </View>
                   </View>
-                </View>
-              </Card>
+                </Card>
               </Pressable>
             );
           }}

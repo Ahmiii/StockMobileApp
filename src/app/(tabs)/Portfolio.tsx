@@ -7,7 +7,6 @@ import RangePicker, {
   type Range,
 } from "@/molecules/RangePicker";
 import HoldingsSection, { type Holding } from "@/organisms/HoldingsSection";
-import IncomeCard from "@/organisms/IncomeCard";
 import InvestPnL from "@/organisms/Invest&PnL";
 import PerformanceCard from "@/organisms/PerformanceCard";
 import PortfolioHeader from "@/organisms/PortfolioHeader";
@@ -114,7 +113,6 @@ const Portfolio = () => {
   const { data: benchmark } = useBenchmark(portfolioId);
   const { data: income } = useIncome(portfolioId);
   const firstTradeDate = benchmark?.window.from;
-
   // 2. Range chips. A chip that starts before the first trade would draw the
   //    same chart as "All", so it is hidden until the history is long enough.
   const chips = RANGES.filter(
@@ -242,9 +240,10 @@ const Portfolio = () => {
       <InvestPnL
         invested={Math.round(summary?.invested ?? 0)}
         unrealizedPnl={Math.round(unrealized)}
+        totalDividend="123"
       />
 
-      {income ? <IncomeCard income={income} /> : null}
+      {/* {income ? <IncomeCard income={income} /> : null} */}
 
       <HoldingsSection
         holdings={holdings}

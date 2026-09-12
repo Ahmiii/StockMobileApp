@@ -17,7 +17,7 @@ type PortfolioItem = {
 };
 
 const getPortfolios = async (): Promise<Portfolio[]> => {
-  const response = await client.get("/portfolio/getPortfolioList");
+  const response = await client.get("/portfolio/list");
   const items: PortfolioItem[] = response.data.data.portfoliolist;
 
   return items.map((item) => ({
@@ -73,7 +73,7 @@ export type DateRange = { from: string; to: string }; // ISO dates
 // `range` bounds each position's trend. Without it the backend returns the
 // last year. It echoes the range it used in the response.
 const getHoldings = async (portfolioId: string, range?: DateRange) => {
-  const response = await client.get(`/portfolio/${portfolioId}/positions`, {
+  const response = await client.get(`/portfolio/${portfolioId}/position-list`, {
     params: range,
   });
   const positions: Position[] = response.data.data.positions;
@@ -110,7 +110,7 @@ export type TradesPage = {
 };
 
 const getTrades = async (portfolioId: string, offset: number, limit = 50) => {
-  const response = await client.get(`/portfolio/${portfolioId}/trades`, {
+  const response = await client.get(`/portfolio/${portfolioId}/trade-list`, {
     params: { limit, offset },
   });
   const page: TradesPage = response.data.data;
@@ -208,19 +208,52 @@ export type IncomeHolding = {
 export type Income = {
   thisYear: Money & { fiscalYear: number; dividends: number };
   lastTwelveMonths: Money & { dividends: number };
-  projected: Money & { yieldOnCost: number | null; currentYield: number | null };
+  projected: Money & {
+    yieldOnCost: number | null;
+    currentYield: number | null;
+  };
   byYear: (Money & { fiscalYear: number })[];
   upcoming: UpcomingDividend[];
   holdings: IncomeHolding[];
-  entitled: { symbol: string; exDate: string; amount: number; shares: number; gross: number; net: number }[];
+  entitled: {
+    symbol: string;
+    exDate: string;
+    amount: number;
+    shares: number;
+    gross: number;
+    net: number;
+  }[];
   taxRate: number;
 };
 
+export type Dividends = {
+  total: number;
+  byStock: [];
+  dividends: [];
+};
+
 const getIncome = async (portfolioId: string) => {
-  const response = await client.get(`/portfolio/${portfolioId}/income`);
+  const response = await client.get(
+    `/portfolio/${portfolioId}/dividend-income`,
+  );
   const income: Income = response.data.data;
   return income;
 };
 
-export { getBenchmark, getHoldings, getIncome, getPortfolios, getTrades };
+const getDividends = async (portfolioId: string) => {
+  const response = await client.get(
+    `/portfolio/${portfolioId}/dividend-income`,
+  );
+  const dividends: Dividends = response.data.data;
+  return dividends;
+};
+
+export {
+  getBenchmark,
+  getDividends,
+  getHoldings,
+  getIncome,
+  getPortfolios,
+  getTrades
+};
 
