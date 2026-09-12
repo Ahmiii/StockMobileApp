@@ -16,20 +16,6 @@ type PortfolioItem = {
   createdAt: string;
 };
 
-const getPortfolios = async (): Promise<Portfolio[]> => {
-  const response = await client.get("/portfolio/list");
-  const items: PortfolioItem[] = response.data.data.portfoliolist;
-
-  return items.map((item) => ({
-    id: item.id,
-    name: item.name,
-    subtitle: item.brokerAccountId
-      ? `${item.baseCurrency} · Linked to broker`
-      : `${item.baseCurrency} · Not linked`,
-    linked: item.brokerAccountId !== null,
-  }));
-};
-
 // One position as the backend sends it (GET /portfolio/:id/positions).
 export type Position = {
   id: string;
@@ -70,20 +56,6 @@ export type HoldingsSummary = {
 
 export type DateRange = { from: string; to: string }; // ISO dates
 
-// `range` bounds each position's trend. Without it the backend returns the
-// last year. It echoes the range it used in the response.
-const getHoldings = async (portfolioId: string, range?: DateRange) => {
-  const response = await client.get(`/portfolio/${portfolioId}/position-list`, {
-    params: range,
-  });
-  const positions: Position[] = response.data.data.positions;
-  const summary: HoldingsSummary = response.data.data.summary;
-  const usedRange: DateRange = response.data.data.range;
-  return { positions, summary, range: usedRange };
-};
-
-// One trade as the backend sends it (GET /portfolio/:id/trades).
-// Numbers arrive as strings; convert with Number() where they are used.
 export type TradeItem = {
   id: string;
   portfolioId: string;
@@ -109,15 +81,6 @@ export type TradesPage = {
   };
 };
 
-const getTrades = async (portfolioId: string, offset: number, limit = 50) => {
-  const response = await client.get(`/portfolio/${portfolioId}/trade-list`, {
-    params: { limit, offset },
-  });
-  const page: TradesPage = response.data.data;
-  return page;
-};
-
-// GET /portfolio/:id/benchmark — the whole history since the first trade.
 export type BenchmarkPoint = {
   date: string;
   portfolio: number; // time-weighted, 100 at the first trade, dividends included
@@ -172,61 +135,8 @@ export type Benchmark = {
   positions: BenchmarkPosition[];
 };
 
-const getBenchmark = async (portfolioId: string) => {
-  const response = await client.get(`/portfolio/${portfolioId}/benchmark`);
-  const benchmark: Benchmark = response.data.data;
-  return benchmark;
-};
-
-// GET /portfolio/:id/income — dividend income worked out from trades and the
-// recorded dividends. Rupees; `net` is after withholding tax (`taxRate`).
 export type Money = { gross: number; net: number };
 
-export type UpcomingDividend = {
-  symbol: string;
-  exDate: string;
-  buyBefore: string; // last weekday before the ex-date
-  amount: number; // Rs per share
-  held: boolean; // false for a watchlist-only stock
-  shares: number;
-  expected: Money | null;
-};
-
-export type IncomeHolding = {
-  symbol: string;
-  shares: number;
-  avgCost: number;
-  lastPrice: number | null;
-  trailingDps: number; // dividend per share, last 12 months
-  projected: number; // shares × trailingDps
-  yieldOnCost: number | null; // percent
-  currentYield: number | null; // percent
-  thisYear: number; // gross, this fiscal year
-  nextExDate: string | null;
-};
-
-export type Income = {
-  thisYear: Money & { fiscalYear: number; dividends: number };
-  lastTwelveMonths: Money & { dividends: number };
-  projected: Money & {
-    yieldOnCost: number | null;
-    currentYield: number | null;
-  };
-  byYear: (Money & { fiscalYear: number })[];
-  upcoming: UpcomingDividend[];
-  holdings: IncomeHolding[];
-  entitled: {
-    symbol: string;
-    exDate: string;
-    amount: number;
-    shares: number;
-    gross: number;
-    net: number;
-  }[];
-  taxRate: number;
-};
-
-// GET /portfolio/:id/dividend-income — every dividend the holdings earned.
 export type DividendByStock = {
   symbol: string;
   dividends: number; // how many payouts
@@ -247,12 +157,42 @@ export type Dividends = {
   dividends: DividendRecord[]; // newest first
 };
 
-const getIncome = async (portfolioId: string) => {
-  const response = await client.get(
-    `/portfolio/${portfolioId}/dividend-income`,
-  );
-  const income: Income = response.data.data;
-  return income;
+const getPortfolios = async (): Promise<Portfolio[]> => {
+  const response = await client.get("/portfolio/list");
+  const items: PortfolioItem[] = response.data.data.portfoliolist;
+
+  return items.map((item) => ({
+    id: item.id,
+    name: item.name,
+    subtitle: item.brokerAccountId
+      ? `${item.baseCurrency} · Linked to broker`
+      : `${item.baseCurrency} · Not linked`,
+    linked: item.brokerAccountId !== null,
+  }));
+};
+
+const getHoldings = async (portfolioId: string, range?: DateRange) => {
+  const response = await client.get(`/portfolio/${portfolioId}/position-list`, {
+    params: range,
+  });
+  const positions: Position[] = response.data.data.positions;
+  const summary: HoldingsSummary = response.data.data.summary;
+  const usedRange: DateRange = response.data.data.range;
+  return { positions, summary, range: usedRange };
+};
+
+const getTrades = async (portfolioId: string, offset: number, limit = 50) => {
+  const response = await client.get(`/portfolio/${portfolioId}/trade-list`, {
+    params: { limit, offset },
+  });
+  const page: TradesPage = response.data.data;
+  return page;
+};
+
+const getBenchmark = async (portfolioId: string) => {
+  const response = await client.get(`/portfolio/${portfolioId}/benchmark`);
+  const benchmark: Benchmark = response.data.data;
+  return benchmark;
 };
 
 const getDividends = async (portfolioId: string) => {
@@ -263,12 +203,4 @@ const getDividends = async (portfolioId: string) => {
   return dividends;
 };
 
-export {
-  getBenchmark,
-  getDividends,
-  getHoldings,
-  getIncome,
-  getPortfolios,
-  getTrades
-};
-
+export { getBenchmark, getDividends, getHoldings, getPortfolios, getTrades };

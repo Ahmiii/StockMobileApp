@@ -2,7 +2,6 @@ import {
   getBenchmark,
   getDividends,
   getHoldings,
-  getIncome,
   getPortfolios,
   getTrades,
   type DateRange,
@@ -66,15 +65,6 @@ export const useBenchmark = (portfolioId: string) =>
   useQuery({
     queryKey: ["benchmark", portfolioId],
     queryFn: () => getBenchmark(portfolioId),
-    enabled: portfolioId !== "",
-    staleTime: 60 * 60 * 1000,
-  });
-
-// Dividend income; like the benchmark it only changes after a sync.
-export const useIncome = (portfolioId: string) =>
-  useQuery({
-    queryKey: ["income", portfolioId],
-    queryFn: () => getIncome(portfolioId),
     enabled: portfolioId !== "",
     staleTime: 60 * 60 * 1000,
   });

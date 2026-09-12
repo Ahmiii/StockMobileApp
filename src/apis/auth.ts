@@ -1,6 +1,8 @@
 import type { Href } from "expo-router";
 import { client, setAuthToken } from "./client";
 
+// ---- types -----------------------------------------------------------------
+
 export type LoginRequest = {
   email: string;
   password: string;
@@ -17,6 +19,16 @@ export type BrokerAccountRequest = {
   password: string;
 };
 
+export type BrokerAccount = {
+  id: string;
+  clientCode: string;
+  syncStatus: "idle" | "syncing" | "error" | "disconnected";
+  lastSyncedAt: string | null; // ISO timestamp of the last successful sync
+};
+
+// ---- functions -------------------------------------------------------------
+
+// POST /auth/login
 const login = async (body: LoginRequest) => {
   const response = await client.post("/auth/login", body);
   if (response.data.message !== "success") {
@@ -26,20 +38,15 @@ const login = async (body: LoginRequest) => {
   setAuthToken(token);
   return { user, token };
 };
+
 const logout = () => {
   setAuthToken(null);
 };
 
+// POST /broker/accounts
 const linkBrokerAccount = async (body: BrokerAccountRequest) => {
   const response = await client.post("/broker/accounts", body);
   return response.data.data;
-};
-
-export type BrokerAccount = {
-  id: string;
-  clientCode: string;
-  syncStatus: "idle" | "syncing" | "error" | "disconnected";
-  lastSyncedAt: string | null; // ISO timestamp of the last successful sync
 };
 
 // GET /broker/accounts — the broker accounts already linked to this user.

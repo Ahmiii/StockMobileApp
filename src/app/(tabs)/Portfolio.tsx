@@ -111,7 +111,6 @@ const Portfolio = () => {
   // 1. Portfolio vs KSE100 for the whole history. Both lines start at 100 on
   //    the first trade, and money added never moves the portfolio line.
   const { data: benchmark } = useBenchmark(portfolioId);
-  // const { data: income } = useIncome(portfolioId);
   const { data: dividends } = useDividends(portfolioId);
   const firstTradeDate = benchmark?.window.from;
   // 2. Range chips. A chip that starts before the first trade would draw the
@@ -244,7 +243,6 @@ const Portfolio = () => {
         totalDividend={formatMoney(Number(dividends?.total))}
       />
 
-      {/* {income ? <IncomeCard income={income} /> : null} */}
 
       <HoldingsSection
         holdings={holdings}

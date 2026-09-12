@@ -41,7 +41,6 @@ const DividendStockList = ({
 }: Props) => {
   const [openSymbol, setOpenSymbol] = useState<string | null>(null);
   const [muted] = useCSSVariable(["--color-muted"]);
-  console.log({ dividends });
   const toggle = (symbol: string) =>
     setOpenSymbol((current) => (current === symbol ? null : symbol));
 

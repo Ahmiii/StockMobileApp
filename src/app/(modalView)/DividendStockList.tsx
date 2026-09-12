@@ -7,7 +7,6 @@ import { Text, View } from "react-native";
 // area, and the list is the only scroller, so no Screen wrapper here.
 const DividendStockListScreen = () => {
   const { data, isPending, error } = useDividends(usePortfolioId());
-  console.log({ data });
   if (isPending) {
     return (
       <View className="gap-3">

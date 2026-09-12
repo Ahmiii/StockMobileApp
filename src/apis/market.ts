@@ -1,5 +1,7 @@
 import { client } from "./client";
 
+// ---- types -----------------------------------------------------------------
+
 // One daily bar as the backend sends it (GET /market/prices/:symbol).
 export type PriceBar = {
   date: string;
@@ -10,16 +12,7 @@ export type PriceBar = {
   volume: number;
 };
 
-// GET /market/prices/KSE100?from=2021-08-31&to=2026-08-31
-// Without from/to the backend returns the last year.
-const getIndexPrices = async (symbol: string, from?: string, to?: string) => {
-  const query = from && to ? `?from=${from}&to=${to}` : "";
-  const response = await client.get(`/market/prices/${symbol}${query}`);
-  const bars: PriceBar[] = response.data.data.bars;
-  return bars;
-};
-
-// GET /market/trend/PSO?period=6M
+// What the trend endpoint accepts as ?period= (GET /market/trend/:symbol).
 export type TrendPeriod = "1W" | "1M" | "3M" | "6M" | "1Y" | "3Y" | "5Y";
 
 export type TrendPoint = {
@@ -41,13 +34,7 @@ export type StockTrend = {
   };
 };
 
-const getStockTrend = async (symbol: string, period: TrendPeriod) => {
-  const response = await client.get(`/market/trend/${symbol}?period=${period}`);
-  const trend: StockTrend = response.data.data;
-  return trend;
-};
-
-// GET /market/securities?q=pso
+// One search hit (GET /market/securities?q=).
 export type Security = {
   id: string;
   symbol: string;
@@ -55,15 +42,7 @@ export type Security = {
   sector: string | null;
 };
 
-const searchSecurities = async (query: string) => {
-  const response = await client.get(
-    `/market/securities?q=${encodeURIComponent(query)}`,
-  );
-  const securities: Security[] = response.data.data?.securities ?? [];
-  return securities;
-};
-
-// GET /market/corporate-actions/PSO — dividends, bonus, splits, newest first.
+// One event (GET /market/corporate-actions/:symbol), newest first.
 export type CorporateAction = {
   type: "DIVIDEND" | "BONUS" | "RIGHTS" | "SPLIT" | "MERGER";
   exDate: string;
@@ -73,6 +52,34 @@ export type CorporateAction = {
   source: string;
 };
 
+// ---- functions -------------------------------------------------------------
+
+// GET /market/prices/KSE100?from=2021-08-31&to=2026-08-31
+// Without from/to the backend returns the last year.
+const getIndexPrices = async (symbol: string, from?: string, to?: string) => {
+  const query = from && to ? `?from=${from}&to=${to}` : "";
+  const response = await client.get(`/market/prices/${symbol}${query}`);
+  const bars: PriceBar[] = response.data.data.bars;
+  return bars;
+};
+
+// GET /market/trend/PSO?period=6M
+const getStockTrend = async (symbol: string, period: TrendPeriod) => {
+  const response = await client.get(`/market/trend/${symbol}?period=${period}`);
+  const trend: StockTrend = response.data.data;
+  return trend;
+};
+
+// GET /market/securities?q=pso
+const searchSecurities = async (query: string) => {
+  const response = await client.get(
+    `/market/securities?q=${encodeURIComponent(query)}`,
+  );
+  const securities: Security[] = response.data.data?.securities ?? [];
+  return securities;
+};
+
+// GET /market/corporate-actions/PSO — dividends, bonus, splits, newest first.
 const getCorporateActions = async (symbol: string) => {
   const response = await client.get(`/market/corporate-actions/${symbol}`);
   const actions: CorporateAction[] = response.data.data.actions;
