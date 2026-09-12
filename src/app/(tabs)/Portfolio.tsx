@@ -15,9 +15,9 @@ import PortfolioSummary from "@/organisms/PortfolioSummary";
 import { useBrokerAccounts } from "@/queries/useBrokerAccounts";
 import {
   useBenchmark,
+  useDividends,
   useHoldings,
-  useIncome,
-  usePortfolioId,
+  usePortfolioId
 } from "@/queries/usePortfolios";
 import Screen from "@/templates/Screen";
 import { router } from "expo-router";
@@ -111,7 +111,8 @@ const Portfolio = () => {
   // 1. Portfolio vs KSE100 for the whole history. Both lines start at 100 on
   //    the first trade, and money added never moves the portfolio line.
   const { data: benchmark } = useBenchmark(portfolioId);
-  const { data: income } = useIncome(portfolioId);
+  // const { data: income } = useIncome(portfolioId);
+  const { data: dividends } = useDividends(portfolioId);
   const firstTradeDate = benchmark?.window.from;
   // 2. Range chips. A chip that starts before the first trade would draw the
   //    same chart as "All", so it is hidden until the history is long enough.
@@ -240,7 +241,7 @@ const Portfolio = () => {
       <InvestPnL
         invested={Math.round(summary?.invested ?? 0)}
         unrealizedPnl={Math.round(unrealized)}
-        totalDividend="123"
+        totalDividend={formatMoney(Number(dividends?.total))}
       />
 
       {/* {income ? <IncomeCard income={income} /> : null} */}

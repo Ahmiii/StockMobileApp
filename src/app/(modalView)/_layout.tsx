@@ -26,6 +26,12 @@ const AuthLayout = () => {
           presentation: "modal",
         }}
       />
+      <Stack.Screen
+        name="DividendStockList"
+        options={{
+          presentation: "modal",
+        }}
+      />
     </Stack>
   );
 };

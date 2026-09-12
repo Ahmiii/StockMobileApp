@@ -91,9 +91,11 @@ export const useTrades = (portfolioId: string) =>
     enabled: portfolioId !== "",
   });
 
-export const useDividends = (portfolioId: string) => {
+// Dividends received; like the benchmark it only changes after a sync.
+export const useDividends = (portfolioId: string) =>
   useQuery({
     queryKey: ["dividends", portfolioId],
     queryFn: () => getDividends(portfolioId),
+    enabled: portfolioId !== "",
+    staleTime: 60 * 60 * 1000,
   });
-};

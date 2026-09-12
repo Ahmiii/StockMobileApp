@@ -226,10 +226,25 @@ export type Income = {
   taxRate: number;
 };
 
+// GET /portfolio/:id/dividend-income — every dividend the holdings earned.
+export type DividendByStock = {
+  symbol: string;
+  dividends: number; // how many payouts
+  rupees: number; // total received from this stock
+};
+
+export type DividendRecord = {
+  symbol: string;
+  exDate: string; // ISO, e.g. "2024-08-12T00:00:00.000Z"
+  perShare: number; // Rs per share
+  shares: number; // shares held on the ex-date
+  rupees: number; // perShare × shares
+};
+
 export type Dividends = {
-  total: number;
-  byStock: [];
-  dividends: [];
+  total: number; // Rs, all stocks, all time
+  byStock: DividendByStock[];
+  dividends: DividendRecord[]; // newest first
 };
 
 const getIncome = async (portfolioId: string) => {
