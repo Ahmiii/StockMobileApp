@@ -22,7 +22,13 @@ const DividendStockListScreen = () => {
     return <Text className="text-danger">{error.message}</Text>;
   }
 
-  return <DividendStockList dividends={data?.dividends} items={data.byStock} />;
+  return (
+    <DividendStockList
+      dividends={data?.dividends}
+      items={data.byStock}
+      upcomingDividend={data?.upcomingDividend}
+    />
+  );
 };
 
 export default DividendStockListScreen;

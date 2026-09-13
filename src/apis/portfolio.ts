@@ -151,10 +151,19 @@ export type DividendRecord = {
   rupees: number; // perShare × shares
 };
 
+export type UpcommingDividendsRecord = {
+  symbol: string;
+  exDate: string;
+  ownBy: string;
+  perShare: number;
+  shares: number;
+  expected: number;
+};
 export type Dividends = {
   total: number; // Rs, all stocks, all time
   byStock: DividendByStock[];
   dividends: DividendRecord[]; // newest first
+  upcomingDividend: UpcommingDividendsRecord[];
 };
 
 const getPortfolios = async (): Promise<Portfolio[]> => {
