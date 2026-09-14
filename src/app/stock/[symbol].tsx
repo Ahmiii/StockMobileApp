@@ -1,6 +1,6 @@
+import type { TrendPeriod } from "@/apis/market";
 import Label from "@/atoms/Label";
 import Skeleton from "@/atoms/Skeleton";
-import type { TrendPeriod } from "@/apis/market";
 import RangePicker, { type RangeOption } from "@/molecules/RangePicker";
 import PerformanceCard from "@/organisms/PerformanceCard";
 import StockStats, { type Stat } from "@/organisms/StockStats";
@@ -33,7 +33,10 @@ const PERIOD_LABEL: Record<TrendPeriod, string> = {
 };
 
 const money = (n: number) =>
-  n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  n.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
 const percent = (n: number) => `${n > 0 ? "+" : ""}${n.toFixed(2)}%`;
 
@@ -45,12 +48,16 @@ const toneOf = (n: number) => {
 
 // "2025-06-02" -> "2 Jun 2025"
 const longDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  new Date(iso).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 
 // "2 for 1" for a split, "10% bonus" for a bonus issue.
 const describeRatio = (type: string, ratio: number | null) => {
   if (ratio === null) return "";
-  if (type === "BONUS") return `${Math.round((ratio - 1) * 100)}% bonus`;
+  if (type === "BONUS_SHARE") return `${Math.round((ratio - 1) * 100)}% bonus`;
   return `${ratio} for 1`;
 };
 
@@ -63,7 +70,10 @@ const DetailSkeleton = () => (
 );
 
 const StockDetail = () => {
-  const { symbol = "", name } = useLocalSearchParams<{ symbol: string; name?: string }>();
+  const { symbol = "", name } = useLocalSearchParams<{
+    symbol: string;
+    name?: string;
+  }>();
   const [period, setPeriod] = useState<TrendPeriod>("6M");
   const { data, isPending, error } = useStockTrend(symbol, period);
   const { data: actions } = useCorporateActions(symbol);
@@ -72,17 +82,26 @@ const StockDetail = () => {
   const today = new Date().toISOString().slice(0, 10);
   const dividends = (actions ?? []).filter((a) => a.type === "DIVIDEND");
   const nextDividend = [...dividends].reverse().find((a) => a.exDate >= today);
-  const yearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const yearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
   const trailingDps = dividends
     .filter((a) => a.exDate > yearAgo && a.exDate <= today)
     .reduce((sum, a) => sum + (a.amount ?? 0), 0);
-  const lastShareEvent = (actions ?? []).find((a) => a.type === "SPLIT" || a.type === "BONUS");
+  const lastShareEvent = (actions ?? []).find(
+    (a) => a.type === "SPLIT" || a.type === "BONUS_SHARE",
+  );
   const actionStats: Stat[] = [
     {
       label: "Next dividend",
-      value: nextDividend ? `Rs ${nextDividend.amount} · ex ${longDate(nextDividend.exDate)}` : "none announced",
+      value: nextDividend
+        ? `Rs ${nextDividend.amount} · ex ${longDate(nextDividend.exDate)}`
+        : "none announced",
     },
-    { label: "Paid last 12 months", value: `Rs ${trailingDps.toFixed(2)}/share` },
+    {
+      label: "Paid last 12 months",
+      value: `Rs ${trailingDps.toFixed(2)}/share`,
+    },
     {
       label: "Last split / bonus",
       value: lastShareEvent
@@ -118,9 +137,21 @@ const StockDetail = () => {
     const { stockReturn, benchmarkReturn, outperformance } = data.summary;
 
     const stats: Stat[] = [
-      { label: `${symbol} return`, value: percent(stockReturn), tone: toneOf(stockReturn) },
-      { label: "KSE-100 return", value: percent(benchmarkReturn), tone: toneOf(benchmarkReturn) },
-      { label: "vs KSE-100", value: percent(outperformance), tone: toneOf(outperformance) },
+      {
+        label: `${symbol} return`,
+        value: percent(stockReturn),
+        tone: toneOf(stockReturn),
+      },
+      {
+        label: "KSE-100 return",
+        value: percent(benchmarkReturn),
+        tone: toneOf(benchmarkReturn),
+      },
+      {
+        label: "vs KSE-100",
+        value: percent(outperformance),
+        tone: toneOf(outperformance),
+      },
       { label: "Sessions", value: String(series.length) },
       { label: "Period high", value: money(high) },
       { label: "Period low", value: money(low) },
@@ -153,7 +184,9 @@ const StockDetail = () => {
 
         <StockStats stats={stats} />
 
-        {actions ? <StockStats title="DIVIDENDS & ACTIONS" stats={actionStats} /> : null}
+        {actions ? (
+          <StockStats title="DIVIDENDS & ACTIONS" stats={actionStats} />
+        ) : null}
       </>
     );
   } else {

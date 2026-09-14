@@ -42,9 +42,9 @@ export type Security = {
   sector: string | null;
 };
 
-// One event (GET /market/corporate-actions/:symbol), newest first.
+// One event (GET /market/payout/:symbol), newest first.
 export type CorporateAction = {
-  type: "DIVIDEND" | "BONUS" | "RIGHTS" | "SPLIT" | "MERGER";
+  type: "DIVIDEND" | "BONUS_SHARE" | "RIGHT_SHARE" | "SPLIT" | "MERGER";
   exDate: string;
   ratio: number | null; // new shares per old (bonus, split, merger)
   amount: number | null; // Rs per share (dividend) or rights price
@@ -79,9 +79,10 @@ const searchSecurities = async (query: string) => {
   return securities;
 };
 
-// GET /market/corporate-actions/PSO — dividends, bonus, splits, newest first.
+// GET /market/payout/PSO — dividends, bonus, splits, newest first. Reads our
+// table only; the nightly sync keeps it filled.
 const getCorporateActions = async (symbol: string) => {
-  const response = await client.get(`/market/corporate-actions/${symbol}`);
+  const response = await client.get(`/market/payout/${symbol}`);
   const actions: CorporateAction[] = response.data.data.actions;
   return actions;
 };
