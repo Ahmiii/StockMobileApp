@@ -35,6 +35,8 @@ export type Position = {
   unrealizedPnl: number;
   unrealizedPct: number | null;
   realizedPnl: number;
+  sector: string | null;
+  weightPct: number | null;
   trend: { date: string; close: number }[];
 };
 

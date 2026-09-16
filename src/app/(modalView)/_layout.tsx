@@ -21,7 +21,7 @@ const AuthLayout = () => {
       }}
     >
       <Stack.Screen
-        name="expandHoldings"
+        name="ExpandHoldings"
         options={{
           presentation: "modal",
         }}

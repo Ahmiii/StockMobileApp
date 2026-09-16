@@ -6,6 +6,7 @@ import RangePicker, {
   rangeDates,
   type Range,
 } from "@/molecules/RangePicker";
+import AllocationCard from "@/organisms/AllocationCard";
 import HoldingsSection, { type Holding } from "@/organisms/HoldingsSection";
 import InvestPnL from "@/organisms/Invest&PnL";
 import PerformanceCard from "@/organisms/PerformanceCard";
@@ -17,7 +18,7 @@ import {
   useBenchmark,
   useDividends,
   useHoldings,
-  usePortfolioId
+  usePortfolioId,
 } from "@/queries/usePortfolios";
 import Screen from "@/templates/Screen";
 import { router } from "expo-router";
@@ -129,9 +130,10 @@ const Portfolio = () => {
   // 3. Holdings for that range (the sparklines use the range's bars).
   const { data: holdingsData, isPending } = useHoldings(portfolioId, dates);
   const summary = holdingsData?.summary;
-  const holdings = (holdingsData?.positions ?? [])
-    .filter((position) => position.quantity > 0)
-    .map(toHolding);
+  const openPositions = (holdingsData?.positions ?? []).filter(
+    (position) => position.quantity > 0,
+  );
+  const holdings = openPositions.map(toHolding);
 
   // 4. Chart: the part of the history inside the range, rebased to 100 on
   //    the range's first day so it reads as "return over this range".
@@ -243,7 +245,6 @@ const Portfolio = () => {
         totalDividend={formatMoney(Number(dividends?.total))}
       />
 
-
       <HoldingsSection
         holdings={holdings}
         onPressItem={(holding) =>
@@ -253,6 +254,7 @@ const Portfolio = () => {
           })
         }
       />
+      <AllocationCard positions={openPositions} />
     </Screen>
   );
 };
