@@ -27,6 +27,8 @@ export type Holding = {
   detail?: string;
   price?: string; // "56.24", last traded price
   tone?: Tone;
+  /** Colour of the small line: its own direction over the range. Falls back to `tone`. */
+  trendTone?: Tone;
   trend?: number[];
   stale?: string; // "price from 3 Jan 2025" — shown instead of the sparkline
 };
@@ -80,7 +82,7 @@ const HoldingsSection = ({ holdings, height = 280, onPressItem }: Props) => {
                           height={28}
                           strokeWidth={1.5}
                           series={[
-                            { values: item.trend, color: lineColor[tone] },
+                            { values: item.trend, color: lineColor[item.trendTone ?? tone] },
                           ]}
                         />
                       </View>

@@ -1,5 +1,7 @@
 import type { BrokerAccount } from "@/apis/auth";
 import type { Position } from "@/apis/portfolio";
+import Button from "@/atoms/Button";
+import { isoDate } from "@/molecules/rangePickerShared";
 import RangePicker, {
   PERIOD_LABEL,
   RANGES,
@@ -19,10 +21,12 @@ import {
   useDividends,
   useHoldings,
   usePortfolioId,
+  usePortfolios,
 } from "@/queries/usePortfolios";
 import Screen from "@/templates/Screen";
 import { router } from "expo-router";
 import { useState } from "react";
+import { Text } from "react-native";
 
 // ---- formatting helpers ----------------------------------------------------
 
@@ -65,19 +69,23 @@ const staleLabel = (priceAsOf: string | null) => {
   return age > ONE_WEEK_MS ? `price from ${formatDate(priceAsOf)}` : undefined;
 };
 
-// "Synced 8 Sep, 17:32", or why there is nothing to show.
-const syncLabelFor = (account?: BrokerAccount) => {
-  if (!account) return "No broker linked";
-  if (account.syncStatus === "syncing") return "Syncing…";
-  if (account.syncStatus === "error") return "Last sync failed";
-  if (!account.lastSyncedAt) return "Not synced yet";
+// "Synced 8 Sep, 17:32" in green, or why there is nothing to show in grey or red.
+// `loading` is true until the accounts have answered, so the pill does not say
+// "No broker linked" for a moment on every launch.
+const syncStatusFor = (account: BrokerAccount | undefined, loading: boolean) => {
+  if (loading) return { label: "Checking sync…", tone: "neutral" as const };
+  if (!account) return { label: "No broker linked", tone: "neutral" as const };
+  if (account.syncStatus === "syncing") return { label: "Syncing…", tone: "neutral" as const };
+  if (account.syncStatus === "error") return { label: "Last sync failed", tone: "danger" as const };
+  if (account.syncStatus === "disconnected") return { label: "Broker disconnected", tone: "neutral" as const };
+  if (!account.lastSyncedAt) return { label: "Not synced yet", tone: "neutral" as const };
   const at = new Date(account.lastSyncedAt).toLocaleString("en-GB", {
     day: "numeric",
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
   });
-  return `Synced ${at}`;
+  return { label: `Synced ${at}`, tone: "success" as const };
 };
 
 // One row of the holdings list.
@@ -87,14 +95,30 @@ const toHolding = (position: Position): Holding => {
     .map((point) => point.close);
   const stale = staleLabel(position.priceAsOf);
 
+  // A stock with no price yet has no last price and no value.
+  let price = "—";
+  let value = "—";
+  if (position.lastPrice !== null && position.marketValue !== null) {
+    price = formatMoney(position.lastPrice, 2);
+    value = `Rs ${formatMoney(position.marketValue, 2)}`;
+  }
+
+  // The small line is coloured by its own direction over the range. The
+  // percentage next to it is since you bought, and keeps its own colour.
+  let trendTone = toneOf(0);
+  if (closes.length > 1) {
+    trendTone = toneOf(closes[closes.length - 1] - closes[0]);
+  }
+
   return {
     symbol: position.symbol,
     name: position.companyName,
-    detail: `${position.quantity} @ ${formatMoney(position.avgCost, 2)}`,
-    price: formatMoney(position.lastPrice, 2),
-    value: `Rs ${formatMoney(position.marketValue, 2)}`,
+    detail: `${formatMoney(position.quantity)} @ ${formatMoney(position.avgCost, 2)}`,
+    price,
+    value,
     change: formatPercent(position.unrealizedPct ?? 0, 2),
-    tone: toneOf(position.unrealizedPnl),
+    tone: toneOf(position.unrealizedPnl ?? 0),
+    trendTone,
     trend: stale ? undefined : closes,
     stale,
   };
@@ -106,8 +130,9 @@ const Portfolio = () => {
   const [range, setRange] = useState<Range>("1Y");
   const [showing, setShowing] = useState<"today" | "sinceBought">("today");
   const portfolioId = usePortfolioId();
-  const { data: brokerAccounts } = useBrokerAccounts();
-  const syncLabel = syncLabelFor(brokerAccounts?.[0]);
+  const { error: portfoliosError, refetch: loadPortfoliosAgain } = usePortfolios();
+  const { data: brokerAccounts, isPending: accountsLoading } = useBrokerAccounts();
+  const syncStatus = syncStatusFor(brokerAccounts?.[0], accountsLoading);
 
   // 1. Portfolio vs KSE100 for the whole history. Both lines start at 100 on
   //    the first trade, and money added never moves the portfolio line.
@@ -128,29 +153,67 @@ const Portfolio = () => {
   const dates = rangeDates(activeRange, firstTradeDate);
 
   // 3. Holdings for that range (the sparklines use the range's bars).
-  const { data: holdingsData, isPending } = useHoldings(portfolioId, dates);
+  const {
+    data: holdingsData,
+    isPending,
+    error: holdingsError,
+    refetch: loadHoldingsAgain,
+  } = useHoldings(portfolioId, dates);
   const summary = holdingsData?.summary;
-  const openPositions = (holdingsData?.positions ?? []).filter(
-    (position) => position.quantity > 0,
-  );
+  // Biggest holding first, the same order the allocation card uses.
+  const openPositions = (holdingsData?.positions ?? [])
+    .filter((position) => position.quantity > 0)
+    .sort((a, b) => (b.marketValue ?? 0) - (a.marketValue ?? 0));
   const holdings = openPositions.map(toHolding);
 
   // 4. Chart: the part of the history inside the range, rebased to 100 on
   //    the range's first day so it reads as "return over this range".
-  const points = (benchmark?.series ?? []).filter(
-    (point) => point.date >= dates.from,
-  );
+  //    When the range starts on a day with no trading (a weekend), the chart
+  //    starts from the trading day before it. Otherwise the first day's move
+  //    would be left out: "last week" opened on a Sunday would skip Monday.
+  const series = benchmark?.series ?? [];
+  let firstIndex = series.findIndex((point) => point.date >= dates.from);
+  if (firstIndex === -1) {
+    firstIndex = series.length;
+  }
+  if (firstIndex > 0 && firstIndex < series.length && series[firstIndex].date > dates.from) {
+    firstIndex = firstIndex - 1;
+  }
+  const points = series.slice(firstIndex);
   const portfolioLine = rebase(points.map((point) => point.portfolio));
   const indexLine = rebase(points.map((point) => point.benchmark));
   const portfolioChange =
     (portfolioLine[portfolioLine.length - 1] ?? 100) - 100;
   const indexChange = (indexLine[indexLine.length - 1] ?? 100) - 100;
 
+  // Without the list of portfolios there is no portfolio to load, and the
+  // grey loading blocks would stay forever.
+  if (portfoliosError && portfolioId === "") {
+    return (
+      <Screen>
+        <PortfolioHeader syncLabel={syncStatus.label} syncTone={syncStatus.tone} />
+        <Text className="text-danger">{portfoliosError.message}</Text>
+        <Button label="Try again" variant="solid" onPress={() => loadPortfoliosAgain()} />
+      </Screen>
+    );
+  }
+
   if (isPending) {
     return (
       <Screen>
-        <PortfolioHeader syncLabel={syncLabel} />
+        <PortfolioHeader syncLabel={syncStatus.label} syncTone={syncStatus.tone} />
         <PortfolioSkeleton />
+      </Screen>
+    );
+  }
+
+  // A request that failed must not be drawn as a portfolio worth Rs 0.
+  if (holdingsError && !holdingsData) {
+    return (
+      <Screen>
+        <PortfolioHeader syncLabel={syncStatus.label} syncTone={syncStatus.tone} />
+        <Text className="text-danger">{holdingsError.message}</Text>
+        <Button label="Try again" variant="solid" onPress={() => loadHoldingsAgain()} />
       </Screen>
     );
   }
@@ -175,7 +238,9 @@ const Portfolio = () => {
       day: "numeric",
       year: "numeric",
     });
-  const todayIso = new Date().toISOString().slice(0, 10);
+  // Today on the PSX calendar (Karachi), not the UTC date, which is still
+  // yesterday between midnight and 5 am.
+  const todayIso = isoDate(new Date());
   const asOfLabel =
     summary?.dayChangeAsOf === todayIso
       ? "Portfolio today"
@@ -212,7 +277,7 @@ const Portfolio = () => {
 
   return (
     <Screen>
-      <PortfolioHeader syncLabel={syncLabel} />
+      <PortfolioHeader syncLabel={syncStatus.label} syncTone={syncStatus.tone} />
 
       <PortfolioSummary
         value={`Rs ${formatMoney(summary?.marketValue ?? 0, 2)}`}
@@ -242,7 +307,8 @@ const Portfolio = () => {
       <InvestPnL
         invested={Math.round(summary?.invested ?? 0)}
         unrealizedPnl={Math.round(unrealized)}
-        totalDividend={formatMoney(Number(dividends?.total))}
+        // Empty until the dividends have loaded, so the chip stays hidden instead of showing "NaN".
+        totalDividend={dividends ? formatMoney(dividends.total) : ""}
       />
 
       <HoldingsSection

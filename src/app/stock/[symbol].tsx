@@ -2,6 +2,7 @@ import type { TrendPeriod } from "@/apis/market";
 import Label from "@/atoms/Label";
 import Skeleton from "@/atoms/Skeleton";
 import RangePicker, { type RangeOption } from "@/molecules/RangePicker";
+import { isoDate } from "@/molecules/rangePickerShared";
 import PerformanceCard from "@/organisms/PerformanceCard";
 import StockStats, { type Stat } from "@/organisms/StockStats";
 import StockSummaryCard from "@/organisms/StockSummaryCard";
@@ -32,6 +33,17 @@ const PERIOD_LABEL: Record<TrendPeriod, string> = {
   "5Y": "Last 5 years",
 };
 
+// How many months each period reaches back, to notice a stock with less history.
+const PERIOD_MONTHS: Record<TrendPeriod, number> = {
+  "1W": 0,
+  "1M": 1,
+  "3M": 3,
+  "6M": 6,
+  "1Y": 12,
+  "3Y": 36,
+  "5Y": 60,
+};
+
 const money = (n: number) =>
   n.toLocaleString("en-US", {
     minimumFractionDigits: 2,
@@ -57,7 +69,7 @@ const longDate = (iso: string) =>
 // "2 for 1" for a split, "10% bonus" for a bonus issue.
 const describeRatio = (type: string, ratio: number | null) => {
   if (ratio === null) return "";
-  if (type === "BONUS_SHARE") return `${Math.round((ratio - 1) * 100)}% bonus`;
+  if (type === "BONUS_SHARE") return `${Number(((ratio - 1) * 100).toFixed(1))}% bonus`;
   return `${ratio} for 1`;
 };
 
@@ -79,12 +91,12 @@ const StockDetail = () => {
   const { data: actions } = useCorporateActions(symbol);
 
   // Dividends and share-count events, as a small stats grid.
-  const today = new Date().toISOString().slice(0, 10);
+  // Today on the PSX calendar (Karachi), not the UTC date. A dividend that
+  // goes ex today counts as paid, not as the next one, the same as the backend.
+  const today = isoDate(new Date());
   const dividends = (actions ?? []).filter((a) => a.type === "DIVIDEND");
-  const nextDividend = [...dividends].reverse().find((a) => a.exDate >= today);
-  const yearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 10);
+  const nextDividend = [...dividends].reverse().find((a) => a.exDate > today);
+  const yearAgo = isoDate(new Date(Date.now() - 365 * 24 * 60 * 60 * 1000));
   const trailingDps = dividends
     .filter((a) => a.exDate > yearAgo && a.exDate <= today)
     .reduce((sum, a) => sum + (a.amount ?? 0), 0);
@@ -95,7 +107,7 @@ const StockDetail = () => {
     {
       label: "Next dividend",
       value: nextDividend
-        ? `Rs ${nextDividend.amount} · ex ${longDate(nextDividend.exDate)}`
+        ? `Rs ${(nextDividend.amount ?? 0).toFixed(2)} · ex ${longDate(nextDividend.exDate)}`
         : "none announced",
     },
     {
@@ -126,12 +138,25 @@ const StockDetail = () => {
     const low = Math.min(...closes);
 
     // Best and worst single-session moves in the period.
-    let bestDay = 0;
-    let worstDay = 0;
+    // They start from the first move, not from zero: in a week with only
+    // falling days the "best day" is the smallest fall, not 0.00%.
+    let bestDay = (closes[1] / closes[0] - 1) * 100;
+    let worstDay = bestDay;
     for (let i = 1; i < closes.length; i++) {
       const move = (closes[i] / closes[i - 1] - 1) * 100;
       if (move > bestDay) bestDay = move;
       if (move < worstDay) worstDay = move;
+    }
+
+    // The label comes from the answer, not from the chip just tapped: while a
+    // new period loads, the old numbers stay on screen with their own label.
+    // A stock listed later than the period reaches says since when.
+    let periodLabel = PERIOD_LABEL[data.period];
+    const expectedStart = new Date(data.range.to);
+    expectedStart.setMonth(expectedStart.getMonth() - PERIOD_MONTHS[data.period]);
+    expectedStart.setDate(expectedStart.getDate() + 21);
+    if (data.period !== "1W" && data.range.from > expectedStart.toISOString().slice(0, 10)) {
+      periodLabel = `Since ${longDate(data.range.from)}`;
     }
 
     const { stockReturn, benchmarkReturn, outperformance } = data.summary;
@@ -149,14 +174,15 @@ const StockDetail = () => {
       },
       {
         label: "vs KSE-100",
-        value: percent(outperformance),
+        // a gap between two percentages is in points, not percent
+        value: `${outperformance > 0 ? "+" : ""}${outperformance.toFixed(2)} pts`,
         tone: toneOf(outperformance),
       },
       { label: "Sessions", value: String(series.length) },
       { label: "Period high", value: money(high) },
       { label: "Period low", value: money(low) },
-      { label: "Best day", value: percent(bestDay), tone: "success" },
-      { label: "Worst day", value: percent(worstDay), tone: "danger" },
+      { label: "Best day", value: percent(bestDay), tone: toneOf(bestDay) },
+      { label: "Worst day", value: percent(worstDay), tone: toneOf(worstDay) },
       { label: "Start", value: money(first) },
       { label: "End", value: money(last) },
     ];
@@ -164,15 +190,15 @@ const StockDetail = () => {
     body = (
       <>
         <StockSummaryCard
-          price={last}
+          price={data.lastClose ?? last}
           changeAmount={last - first}
           changePct={stockReturn}
-          periodLabel={PERIOD_LABEL[period]}
-          asOf={data.range.to}
+          periodLabel={periodLabel}
+          asOf={data.lastCloseDate ?? data.range.to}
         />
 
         <PerformanceCard
-          period={PERIOD_LABEL[period]}
+          period={periodLabel}
           delta={percent(stockReturn)}
           portfolio={series.map((point) => point.stock)}
           benchmark={series.map((point) => point.benchmark)}
@@ -184,8 +210,11 @@ const StockDetail = () => {
 
         <StockStats stats={stats} />
 
-        {actions ? (
+        {actions && actions.length > 0 ? (
           <StockStats title="DIVIDENDS & ACTIONS" stats={actionStats} />
+        ) : null}
+        {actions && actions.length === 0 ? (
+          <Text className="text-sm text-muted">No dividend data for this stock.</Text>
         ) : null}
       </>
     );

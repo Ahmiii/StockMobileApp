@@ -14,7 +14,8 @@ export type WatchlistSecurity = {
 };
 
 export type WatchlistData = {
-  benchmark: WatchlistSecurity;
+  benchmark: WatchlistSecurity | null; // null before the first price sync
+
   items: WatchlistSecurity[];
 };
 
@@ -25,8 +26,10 @@ const getWatchlist = async () => {
 };
 
 // POST /watchlist/:securityId
+// The backend saves the stock first and then loads five years of prices for it
+// before it answers, which can take longer than the usual 15 seconds.
 const addToWatchlist = async (securityId: string) => {
-  await client.post(`/watchlist/${securityId}`);
+  await client.post(`/watchlist/${securityId}`, undefined, { timeout: 60_000 });
 };
 
 export { addToWatchlist, getWatchlist };

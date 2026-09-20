@@ -14,9 +14,11 @@ const InvestPnL = ({ invested, unrealizedPnl, totalDividend }: Props) => (
     <StatsCard lable="Invested" realizeProfit={invested} />
     <StatsCard lable="Unrealized P&L" realizeProfit={unrealizedPnl} />
     {/* Ternary, not `&&`: an empty string would render as bare text. */}
+    {/* The figure is what you were entitled to on each ex-date, before the 15%
+        tax. It is counted from the ex-date, a few weeks before the cash arrives. */}
     {totalDividend ? (
       <HorizontalChip
-        label="Dividends received"
+        label="Dividends earned (before tax)"
         iconName="chevron-forward"
         statValue={totalDividend}
         onPressChip={() => router.push("/DividendStockList")}

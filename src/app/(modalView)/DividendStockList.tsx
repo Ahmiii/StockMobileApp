@@ -1,6 +1,7 @@
 import Skeleton from "@/atoms/Skeleton";
 import DividendStockList from "@/organisms/DividendStockList";
 import { useDividends, usePortfolioId } from "@/queries/usePortfolios";
+import { router } from "expo-router";
 import { Text, View } from "react-native";
 
 // Modal listing what each stock has paid. The layout already pads the safe
@@ -18,7 +19,8 @@ const DividendStockListScreen = () => {
     );
   }
 
-  if (error) {
+  // Only when there is nothing to show: a failed refresh keeps the old list.
+  if (error && !data) {
     return <Text className="text-danger">{error.message}</Text>;
   }
 
@@ -27,6 +29,7 @@ const DividendStockListScreen = () => {
       dividends={data?.dividends}
       items={data.byStock}
       upcomingDividend={data?.upcomingDividend}
+      onClose={() => router.back()}
     />
   );
 };

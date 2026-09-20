@@ -34,7 +34,8 @@ const subscribe = (onChange: () => void) => {
   };
 };
 
-export const selectPortfolio = (id: string) => {
+// null forgets the pick, for when the session ends and someone else may sign in.
+export const selectPortfolio = (id: string | null) => {
   selectedId = id;
   listeners.forEach((onChange) => onChange());
 };

@@ -20,6 +20,8 @@ export type WatchItem = {
   price: number | null;
   /** Day change in percent, e.g. 0.28 or -0.4; null with no quote. */
   change: number | null;
+  /** Set when this price is older than the index's, e.g. "4 Sep". Shown under the change. */
+  priceDate?: string;
 };
 
 export type Benchmark = {
@@ -38,10 +40,14 @@ type Props = {
   onPressItem?: (item: WatchItem) => void;
 };
 
+// The change is rounded to two decimals first, so the colour and the sign
+// always agree with the text: -0.004 is "0.00%" in grey, not "-0.00%" in red.
+const rounded = (change: number) => Number(change.toFixed(2));
+
 const toneFor = (change: number | null): Tone => {
   if (change === null) return "neutral";
-  if (change > 0) return "success";
-  if (change < 0) return "danger";
+  if (rounded(change) > 0) return "success";
+  if (rounded(change) < 0) return "danger";
   return "neutral";
 };
 
@@ -49,7 +55,7 @@ const money = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const formatChange = (change: number) =>
-  `${change > 0 ? "+" : ""}${change.toFixed(2)}%`;
+  `${rounded(change) > 0 ? "+" : ""}${rounded(change).toFixed(2)}%`;
 
 const Separator = () => <View className="h-3" />;
 
@@ -116,6 +122,9 @@ const Watchlist = ({ title = "Watchlist", items, benchmark, onAdd, onPressItem }
                       <Text className={`text-sm font-semibold ${textClass[tone]}`}>
                         {formatChange(item.change)}
                       </Text>
+                    ) : null}
+                    {item.priceDate ? (
+                      <Text className="text-xs text-muted">price from {item.priceDate}</Text>
                     ) : null}
                   </View>
 

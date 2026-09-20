@@ -48,7 +48,7 @@ const AllocationCard = ({ positions }: Props) => {
 
         {tooBig ? (
           <Text className="text-sm text-danger">
-            {biggest.symbol} is {Math.round(biggest.weightPct ?? 0)}% of your holdings, above the 25% limit.
+            {biggest.symbol} is {(biggest.weightPct ?? 0).toFixed(1)}% of your holdings, above the 25% limit.
           </Text>
         ) : null}
       </Card>

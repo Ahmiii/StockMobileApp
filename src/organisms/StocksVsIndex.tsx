@@ -45,12 +45,15 @@ const StocksVsIndex = ({
     <View className="gap-2">
       <SectionHeader
         title={title}
+        // The "+ Add" pill only when the screen gives it something to do.
         right={
-          <Pressable onPress={onAdd}>
-            <Pill tone="primary">
-              <Text className="text-xs font-semibold text-primary">+ Add</Text>
-            </Pill>
-          </Pressable>
+          onAdd ? (
+            <Pressable onPress={onAdd}>
+              <Pill tone="primary">
+                <Text className="text-xs font-semibold text-primary">+ Add</Text>
+              </Pill>
+            </Pressable>
+          ) : undefined
         }
       />
 
@@ -95,7 +98,7 @@ const StocksVsIndex = ({
             )}
             ItemSeparatorComponent={Separator}
             ListEmptyComponent={
-              <Text className="text-muted">No stocks added yet</Text>
+              <Text className="text-muted">No open positions</Text>
             }
             showsVerticalScrollIndicator={false}
             nestedScrollEnabled

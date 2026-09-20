@@ -27,6 +27,10 @@ export type StockTrend = {
   period: TrendPeriod;
   range: { from: string; to: string };
   series: TrendPoint[];
+  // The stock's own newest price. It can be a day newer than the last day it
+  // shares with the index, which is where the series ends.
+  lastClose?: number;
+  lastCloseDate?: string;
   summary: {
     stockReturn: number; // percent over the period
     benchmarkReturn: number;

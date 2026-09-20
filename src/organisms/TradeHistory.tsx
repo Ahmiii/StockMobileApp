@@ -60,6 +60,16 @@ const TradeHistory = ({
   const visible =
     filter === "all" ? trades : trades.filter((trade) => trade.side === filter);
 
+  // The total comes from the server and counts every trade. The Buys / Sells
+  // filter only looks at the trades loaded so far, so it says so.
+  let countText = `${total ?? trades.length} executions`;
+  if (filter === "buy") {
+    countText = `${visible.length} buys in the ${trades.length} loaded`;
+  }
+  if (filter === "sell") {
+    countText = `${visible.length} sells in the ${trades.length} loaded`;
+  }
+
   return (
     <View className="flex-1 gap-4">
       <View className="gap-1">
@@ -67,7 +77,7 @@ const TradeHistory = ({
           {title}
         </Label>
         <Text className="text-base text-muted">
-          Synced from {source} · {total ?? trades.length} executions
+          Synced from {source} · {countText}
         </Text>
       </View>
 

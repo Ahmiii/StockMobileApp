@@ -32,6 +32,9 @@ export const loadAuthToken = async () => {
   return authToken;
 };
 
+// False once the backend has rejected the token and it was cleared.
+export const hasAuthToken = () => authToken !== null;
+
 // ---- session expiry -------------------------------------------------------
 // The API layer knows nothing about screens or caches, so when the backend
 // rejects a token it just announces it. The root layout listens and does the

@@ -31,7 +31,8 @@ const Watch = () => {
     );
   }
 
-  if (error) {
+  // Only when there is nothing to show: a failed refresh keeps the old list.
+  if (error && !data) {
     return (
       <Screen scroll={false}>
         <Text className="text-danger">{error.message}</Text>
@@ -39,21 +40,45 @@ const Watch = () => {
     );
   }
 
+  // "2026-09-04" -> "4 Sep"
+  const dayAndMonth = (iso: string) =>
+    new Date(iso).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      timeZone: "UTC",
+    });
+
+  // The index can be missing before the first price sync.
+  const indexRow = data.benchmark;
+  const indexDate = indexRow ? indexRow.asOf : null;
+
   // Chart and target are left out for now; the organism shows them only
   // when an item carries `trend` or `target`.
-  const items: WatchItem[] = data.items.map((security) => ({
-    symbol: security.symbol,
-    name: security.companyName,
-    sector: security.sector ?? undefined,
-    price: security.lastPrice,
-    change: security.changePct,
-  }));
+  const items: WatchItem[] = data.items.map((security) => {
+    // A price older than the index's gets its date, so an old move is not
+    // mistaken for today's.
+    let priceDate;
+    if (security.asOf && indexDate && security.asOf !== indexDate) {
+      priceDate = dayAndMonth(security.asOf);
+    }
+    return {
+      symbol: security.symbol,
+      name: security.companyName,
+      sector: security.sector ?? undefined,
+      price: security.lastPrice,
+      change: security.changePct,
+      priceDate,
+    };
+  });
 
-  const benchmark = {
-    name: data.benchmark.companyName,
-    price: data.benchmark.lastPrice ?? 0,
-    change: data.benchmark.changePct ?? 0,
-  };
+  let benchmark;
+  if (indexRow && indexRow.lastPrice !== null) {
+    benchmark = {
+      name: indexRow.companyName,
+      price: indexRow.lastPrice,
+      change: indexRow.changePct ?? 0,
+    };
+  }
 
   return (
     <Screen scroll={false}>

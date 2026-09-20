@@ -43,10 +43,22 @@ const logout = () => {
   setAuthToken(null);
 };
 
-// POST /broker/accounts
+// POST /broker/accounts, then the first import of trades, holdings and prices.
+// Without the import a newly linked account shows an empty Rs 0 portfolio until
+// the evening job. It talks to the broker and the price provider for every
+// stock, so it gets minutes, not the usual 15 seconds. If the import fails the
+// link still counts: the portfolio header then says "Last sync failed".
 const linkBrokerAccount = async (body: BrokerAccountRequest) => {
   const response = await client.post("/broker/accounts", body);
-  return response.data.data;
+  const linked = response.data.data;
+  try {
+    await client.post(`/broker/accounts/${linked.brokerAccountId}/full-sync`, undefined, {
+      timeout: 300_000,
+    });
+  } catch {
+    // the evening job will try again
+  }
+  return linked;
 };
 
 // GET /broker/accounts — the broker accounts already linked to this user.

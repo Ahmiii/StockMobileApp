@@ -24,15 +24,15 @@ export type Position = {
   companyName: string;
   quantity: number;
   avgCost: number;
-  lastPrice: number;
-  priceAsOf: string;
+  lastPrice: number | null; // null for a stock that has no price yet
+  priceAsOf: string | null;
   previousClose: number | null; // the close before the latest one
   previousCloseDate: string | null; // its date, e.g. Friday on a Monday
   dayChange: number | null; // Rs, quantity × (lastPrice − previousClose); null when stale
   dayChangePct: number | null;
   investedValue: number;
-  marketValue: number;
-  unrealizedPnl: number;
+  marketValue: number | null; // null with no price
+  unrealizedPnl: number | null;
   unrealizedPct: number | null;
   realizedPnl: number;
   sector: string | null;
@@ -164,7 +164,7 @@ export type UpcommingDividendsRecord = {
 export type Dividends = {
   total: number; // Rs, all stocks, all time
   byStock: DividendByStock[];
-  dividends: DividendRecord[]; // newest first
+  dividends: DividendRecord[]; // oldest first, as the backend sends them
   upcomingDividend: UpcommingDividendsRecord[];
 };
 

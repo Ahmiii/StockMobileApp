@@ -19,6 +19,10 @@ const LinkBrokerAccount = () => {
   const linkMutation = useLinkBroker();
 
   const connect = (values: Form) => {
+    // A second tap while it is connecting is ignored.
+    if (linkMutation.isPending) {
+      return;
+    }
     linkMutation.mutate(values, {
       onSuccess: () => {
         // Let the user pick which portfolio on the account to track.
@@ -81,15 +85,33 @@ const LinkBrokerAccount = () => {
               />
             )}
           />
+
+          {/* A wrong client code or PIN, or the broker not answering. */}
+          {linkMutation.error ? (
+            <Text className="px-1 text-sm text-danger">
+              {linkMutation.error.message}
+            </Text>
+          ) : null}
         </View>
 
         <InfoNote>
           Credentials are encrypted at rest and used only to sync your own
           trades. Nothing is ever logged in plain text.
         </InfoNote>
+
+        {linkMutation.isPending ? (
+          <Text className="px-1 text-sm text-muted">
+            Connecting and importing your trades. This can take a few minutes.
+          </Text>
+        ) : null}
       </View>
 
-      <Button label="Connect" variant="solid" onPress={handleSubmit(connect)} />
+      <Button
+        label={linkMutation.isPending ? "Connecting…" : "Connect"}
+        variant="solid"
+        disabled={linkMutation.isPending}
+        onPress={handleSubmit(connect)}
+      />
     </KeyboardAvoidingView>
   );
 };

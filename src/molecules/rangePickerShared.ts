@@ -46,7 +46,7 @@ export type DateRange = { from: string; to: string };
 
 // The PSX day, not the UTC one: Karachi is UTC+5 all year, so shift before
 // slicing or the date is a day behind between midnight and 5 am.
-const isoDate = (date: Date) =>
+export const isoDate = (date: Date) =>
   new Date(date.getTime() + 5 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
 /**

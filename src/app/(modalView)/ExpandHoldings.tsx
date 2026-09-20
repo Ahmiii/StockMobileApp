@@ -37,14 +37,22 @@ const toHolding = (position: Position): Holding => {
     return "neutral" as const;
   };
 
+  // A stock with no price yet has no last price and no value.
+  let price = "—";
+  let value = "—";
+  if (position.lastPrice !== null && position.marketValue !== null) {
+    price = formatMoney(position.lastPrice, 2);
+    value = `Rs ${formatMoney(position.marketValue, 2)}`;
+  }
+
   return {
     symbol: position.symbol,
     name: position.companyName,
-    detail: `${position.quantity} @ ${formatMoney(position.avgCost, 2)}`,
-    price: formatMoney(position.lastPrice, 2),
-    value: `Rs ${formatMoney(position.marketValue, 2)}`,
+    detail: `${formatMoney(position.quantity)} @ ${formatMoney(position.avgCost, 2)}`,
+    price,
+    value,
     change: formatPercent(position.unrealizedPct ?? 0, 2),
-    tone: toneOf(position.unrealizedPnl),
+    tone: toneOf(position.unrealizedPnl ?? 0),
     trend: stale ? undefined : closes,
     stale,
   };

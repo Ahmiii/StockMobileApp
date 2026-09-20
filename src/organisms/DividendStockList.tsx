@@ -16,7 +16,7 @@ import { useCSSVariable } from "uniwind";
 type Tab = "received" | "upcoming";
 
 const TABS: FilterOption<Tab>[] = [
-  { value: "received", label: "Received" },
+  { value: "received", label: "Earned" },
   { value: "upcoming", label: "Upcoming" },
 ];
 
@@ -25,6 +25,8 @@ type Props = {
   items: DividendByStock[];
   dividends: DividendRecord[];
   upcomingDividend: UpcommingDividendsRecord[];
+  /** Shows a "Close" button at the top when given. */
+  onClose?: () => void;
 };
 
 const money = (amount: number, decimals = 0) =>
@@ -33,11 +35,13 @@ const money = (amount: number, decimals = 0) =>
     maximumFractionDigits: decimals,
   });
 
+// The backend sends the calendar date at midnight UTC, so it is read as UTC on every phone.
 const shortDate = (iso: string) =>
   new Date(iso).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: "UTC",
   });
 
 const Separator = () => <View className="h-2" />;
@@ -50,22 +54,25 @@ const PayoutRow = ({ record }: { record: DividendRecord }) => (
         {shortDate(record.exDate)}
       </Text>
       <Text className="text-xs text-muted">
-        Rs {money(record.perShare, 2)} × {record.shares} shares
+        Rs {money(record.perShare, 2)} × {money(record.shares)} shares
       </Text>
     </View>
     <Text className="text-sm font-semibold text-foreground">
-      Rs {money(record.rupees)}
+      Rs {money(record.rupees, 2)}
     </Text>
   </View>
 );
 
-// Two tabs. "Received": one row per stock that opens like an accordion to
+// Two tabs. "Earned": one row per stock that opens like an accordion to
 // list that stock's payouts. "Upcoming": announced payouts, one per line.
+// All amounts are before the 15% tax, and a payout counts from its ex-date,
+// which is a few weeks before the cash arrives.
 const DividendStockList = ({
   title = "Dividends",
   items,
   dividends,
   upcomingDividend,
+  onClose,
 }: Props) => {
   const [tab, setTab] = useState<Tab>("received");
   const [openSymbol, setOpenSymbol] = useState<string | null>(null);
@@ -73,21 +80,25 @@ const DividendStockList = ({
   const toggle = (symbol: string) =>
     setOpenSymbol((current) => (current === symbol ? null : symbol));
 
+  // The stock that paid the most comes first.
+  const stocksByAmount = [...items].sort((a, b) => b.rupees - a.rupees);
+
   let list = null;
 
   if (tab === "received") {
     list = (
       <FlashList
-        data={items}
+        data={stocksByAmount}
         keyExtractor={(item) => item.symbol}
         // Rows only re-render when their data changes; the open state lives
         // outside the data, so tell the list to re-render when it moves.
         extraData={openSymbol}
         renderItem={({ item }) => {
           const open = item.symbol === openSymbol;
-          const records = dividends.filter(
-            (record) => record.symbol === item.symbol,
-          );
+          // The backend sends the oldest payout first; the newest reads better on top.
+          const records = dividends
+            .filter((record) => record.symbol === item.symbol)
+            .reverse();
 
           return (
             <Card bordered className="gap-3">
@@ -108,7 +119,7 @@ const DividendStockList = ({
                   </View>
                   <View className="flex-row items-center gap-2">
                     <Text className="text-base font-semibold text-success">
-                      Rs {money(item.rupees)}
+                      Rs {money(item.rupees, 2)}
                     </Text>
                     <Ionicons
                       name={open ? "chevron-up" : "chevron-down"}
@@ -154,14 +165,17 @@ const DividendStockList = ({
             <View className="flex-row items-center justify-between">
               <View>
                 <Text className="text-sm text-foreground">
-                  {shortDate(item.exDate)}
+                  Ex-date {shortDate(item.exDate)}
                 </Text>
                 <Text className="text-xs text-muted">
-                  Rs {money(item.perShare, 2)} × {item.shares} shares
+                  Own the shares by {shortDate(item.ownBy)}
+                </Text>
+                <Text className="text-xs text-muted">
+                  Rs {money(item.perShare, 2)} × {money(item.shares)} shares
                 </Text>
               </View>
               <Text className="text-sm font-semibold text-foreground">
-                Rs {money(item.expected)}
+                Rs {money(item.expected, 2)}
               </Text>
             </View>
           </Card>
@@ -178,9 +192,19 @@ const DividendStockList = ({
 
   return (
     <View className="flex-1 gap-3">
-      <Label size="lg" color="foreground">
-        {title}
-      </Label>
+      <View className="flex-row items-center justify-between">
+        <Label size="lg" color="foreground">
+          {title}
+        </Label>
+        {onClose ? (
+          <Pressable onPress={onClose} accessibilityRole="button">
+            <Text className="text-base font-semibold text-primary">Close</Text>
+          </Pressable>
+        ) : null}
+      </View>
+      <Text className="text-xs text-muted">
+        Before the 15% tax. A payout counts from its ex-date, a few weeks before the cash arrives.
+      </Text>
 
       <FilterChips options={TABS} value={tab} onChange={setTab} />
 

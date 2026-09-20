@@ -7,14 +7,19 @@ export const useWatchlist = () =>
     queryFn: getWatchlist,
   });
 
-// After a successful add, mark the watchlist stale so the list refetches
-// and the new symbol appears without any manual state juggling.
+// After an add, mark the watchlist stale so the list refetches and the new
+// symbol appears. Also after a failed add: the backend saves the stock before
+// it loads the prices, so the stock can be on the list even when the request
+// timed out. The search results no longer offer a stock that is on the list.
 export const useAddToWatchlist = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: addToWatchlist,
     retry: false,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["watchlist"] }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["watchlist"] });
+      queryClient.invalidateQueries({ queryKey: ["securities"] });
+    },
   });
 };

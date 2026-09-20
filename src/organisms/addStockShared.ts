@@ -32,8 +32,21 @@ export const useAddStock = (onClose: () => void) => {
     onClose();
   };
 
+  // A second tap while an add is still running is ignored.
   const add = (security: Security) => {
+    if (addMutation.isPending) {
+      return;
+    }
     addMutation.mutate(security.id, { onSuccess: close });
+  };
+
+  // Typing again clears the message of an add that failed, so the search
+  // feedback shows again.
+  const changeQuery = (text: string) => {
+    setQuery(text);
+    if (addMutation.error) {
+      addMutation.reset();
+    }
   };
 
   const searched = debouncedQuery.length >= 2;
@@ -42,16 +55,19 @@ export const useAddStock = (onClose: () => void) => {
   const results = searched ? (search.data ?? []) : [];
 
   // One line of feedback under the search box, or nothing when there are results.
+  // isFetching, not isPending: the search keeps its last results while a new
+  // query loads, so it never counts as pending again after the first search.
   let status = "";
   if (!searched) status = "Type a symbol or company name";
-  else if (search.isPending) status = "Searching…";
+  else if (search.isFetching) status = "Searching…";
   else if (search.error) status = search.error.message;
   else if (results.length === 0) status = `No matches for "${debouncedQuery}"`;
+  else if (results.length === 20) status = "Showing the first 20, keep typing to narrow it down";
   if (addMutation.error) status = addMutation.error.message;
 
   return {
     query,
-    setQuery,
+    setQuery: changeQuery,
     results,
     status,
     add,
